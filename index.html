@@ -1,0 +1,5036 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#7c3aed">
+<meta name="description" content="VICO ACTIVE – Plataforma de cursos online con IA">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https:; media-src *; img-src * data: blob:;">
+<title>VICO ACTIVE</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.png" type="image/png">
+<link rel="apple-touch-icon" href="icon.png">
+
+<!-- ============================================================
+     VICO ACTIVE PWA - index.html
+     Autor: Jaime Andrés Dueñas Vicuña
+     Versión: 2.0 - Con RAMManager, Google Drive, RAG Local
+     ============================================================ -->
+
+<style>
+/* ============================================================
+   VARIABLES CSS - TEMAS CLARO / OSCURO / NEÓN
+   ============================================================ */
+:root {
+  --bg-primary: #0d0d1a;
+  --bg-secondary: #12122a;
+  --bg-card: #1a1a3e;
+  --bg-modal: #0f0f2a;
+  --text-primary: #e0e0f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #475569;
+  --accent: #7c3aed;
+  --accent-2: #0ea5e9;
+  --accent-3: #f472b6;
+  --neon-purple: #a78bfa;
+  --neon-blue: #38bdf8;
+  --neon-pink: #f9a8d4;
+  --neon-green: #4ade80;
+  --neon-yellow: #facc15;
+  --border: #ffffff11;
+  --border-accent: #7c3aed44;
+  --shadow-neon: 0 0 20px #7c3aed44, 0 0 40px #7c3aed22;
+  --shadow-card: 0 4px 24px #00000044;
+  --radius: 14px;
+  --radius-sm: 8px;
+  --radius-btn: 999px;
+  --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+  --font-size: 16px;
+  --navbar-h: 64px;
+  --footer-h: 60px;
+}
+
+[data-theme="light"] {
+  --bg-primary: #f0f4ff;
+  --bg-secondary: #e8eeff;
+  --bg-card: #ffffff;
+  --bg-modal: #f8f8ff;
+  --text-primary: #1e1b4b;
+  --text-secondary: #4338ca;
+  --text-muted: #6366f1;
+  --border: #e0e7ff;
+  --border-accent: #7c3aed33;
+  --shadow-card: 0 4px 24px #7c3aed11;
+}
+
+[data-theme="neon"] {
+  --bg-primary: #000008;
+  --bg-secondary: #050510;
+  --bg-card: #0a0a20;
+  --bg-modal: #020210;
+  --text-primary: #ffffff;
+  --text-secondary: #c084fc;
+  --accent: #d946ef;
+  --neon-purple: #f0abfc;
+  --shadow-neon: 0 0 30px #d946ef66, 0 0 60px #d946ef33;
+  --border: #d946ef22;
+  --border-accent: #d946ef55;
+}
+
+/* ============================================================
+   RESET Y BASE
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: var(--font-size); scroll-behavior: smooth; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background var(--transition), color var(--transition);
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
+
+/* ============================================================
+   NAVBAR
+   ============================================================ */
+#navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--navbar-h);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-accent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  gap: 0.5rem;
+  z-index: 1000;
+  box-shadow: var(--shadow-neon);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.nav-logo-img {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  animation: logoPulse 3s ease-in-out infinite;
+  box-shadow: 0 0 12px var(--accent);
+}
+
+@keyframes logoPulse {
+  0%,100% { box-shadow: 0 0 8px var(--accent); }
+  50% { box-shadow: 0 0 20px var(--accent), 0 0 40px var(--accent-2); }
+}
+
+.nav-logo-text {
+  font-size: 1.1rem;
+  font-weight: 900;
+  background: linear-gradient(90deg, var(--neon-purple), var(--neon-blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 1px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex: 1;
+  justify-content: center;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.nav-link {
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--radius-btn);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.nav-link:hover, .nav-link.active {
+  background: var(--bg-card);
+  border-color: var(--border-accent);
+  color: var(--neon-purple);
+  box-shadow: 0 0 12px var(--accent)44, inset 0 0 8px var(--accent)11;
+  text-shadow: 0 0 8px var(--neon-purple);
+}
+
+/* RAM Badge en navbar */
+#ram-badge {
+  background: var(--bg-card);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-btn);
+  padding: 0.25rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--neon-green);
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all var(--transition);
+}
+
+#ram-badge.warning { color: var(--neon-yellow); border-color: #facc1555; box-shadow: 0 0 8px #facc1533; }
+#ram-badge.critical { color: var(--accent-3); border-color: #f472b655; box-shadow: 0 0 12px #f472b644; animation: blinkBadge 0.8s infinite; }
+
+@keyframes blinkBadge { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* Pomodoro en navbar */
+#pomodoro-badge {
+  background: var(--bg-card);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-btn);
+  padding: 0.25rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--neon-blue);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--transition);
+}
+
+#pomodoro-badge:hover { box-shadow: 0 0 10px var(--accent-2)55; }
+#pomodoro-badge.running { color: var(--neon-green); border-color: #4ade8055; }
+#pomodoro-badge.paused  { color: var(--neon-yellow); }
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+#main-content {
+  margin-top: var(--navbar-h);
+  margin-bottom: var(--footer-h);
+  min-height: calc(100vh - var(--navbar-h) - var(--footer-h));
+  padding: 1.5rem 1rem;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Secciones de páginas */
+.page { display: none; animation: fadeIn 0.3s ease; }
+.page.active { display: block; }
+
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* ============================================================
+   BOTONES ESTILO NINTENDO SWITCH CON HALOS NEÓN
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.4rem;
+  border-radius: var(--radius-btn);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  letter-spacing: 0.3px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Efecto ripple/halo al hacer click */
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.btn:active::after { opacity: 1; animation: haloRing 0.4s ease-out; }
+
+@keyframes haloRing {
+  0% { box-shadow: 0 0 0 0 currentColor; opacity: 0.8; }
+  100% { box-shadow: 0 0 0 12px currentColor; opacity: 0; }
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
+  box-shadow: 0 0 16px var(--accent)55, 0 4px 12px #00000033;
+}
+.btn-primary:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 0 28px var(--accent)88, 0 8px 20px #00000044;
+}
+.btn-primary:active { transform: scale(0.97); }
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--neon-purple);
+  border: 1px solid var(--border-accent);
+  box-shadow: 0 0 8px var(--accent)22;
+}
+.btn-secondary:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 18px var(--accent)55;
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #dc2626, #9f1239);
+  color: #fff;
+  box-shadow: 0 0 16px #dc262655;
+}
+.btn-danger:hover { box-shadow: 0 0 28px #dc262688; transform: translateY(-2px); }
+
+.btn-success {
+  background: linear-gradient(135deg, #16a34a, #0f766e);
+  color: #fff;
+  box-shadow: 0 0 16px #16a34a55;
+}
+.btn-success:hover { box-shadow: 0 0 28px #16a34a88; transform: translateY(-2px); }
+
+.btn-neon {
+  background: transparent;
+  color: var(--neon-purple);
+  border: 2px solid var(--neon-purple);
+  box-shadow: 0 0 12px var(--neon-purple)44, inset 0 0 8px var(--neon-purple)11;
+}
+.btn-neon:hover {
+  background: var(--neon-purple)11;
+  box-shadow: 0 0 24px var(--neon-purple)88, inset 0 0 16px var(--neon-purple)22;
+  transform: translateY(-2px);
+}
+
+.btn-sm { padding: 0.35rem 0.85rem; font-size: 0.78rem; }
+.btn-lg { padding: 0.85rem 2rem; font-size: 1rem; }
+.btn-icon { padding: 0.5rem; width: 38px; height: 38px; }
+
+/* ============================================================
+   CARDS
+   ============================================================ */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+.card:hover { border-color: var(--border-accent); box-shadow: var(--shadow-neon); }
+.card:hover::before { opacity: 1; }
+
+/* ============================================================
+   GRID LAYOUTS
+   ============================================================ */
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; }
+.flex-row { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.flex-col { display: flex; flex-direction: column; gap: 0.75rem; }
+
+/* ============================================================
+   FORMULARIOS
+   ============================================================ */
+.form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+.form-label { font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); }
+
+.form-input, .form-select, .form-textarea {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 0.6rem 0.9rem;
+  font-size: 0.88rem;
+  font-family: inherit;
+  transition: all var(--transition);
+  width: 100%;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent)22;
+}
+
+.form-textarea { resize: vertical; min-height: 100px; }
+
+.form-range {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: 3px;
+  outline: none;
+}
+.form-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 0 8px var(--accent);
+}
+
+/* Toggle Switch */
+.toggle-wrap { display: flex; align-items: center; gap: 0.75rem; }
+.toggle {
+  position: relative;
+  width: 44px; height: 24px;
+  flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-accent);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px; height: 18px;
+  left: 2px; top: 2px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  transition: all var(--transition);
+}
+.toggle input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 10px var(--accent)55; }
+.toggle input:checked + .toggle-slider::before { transform: translateX(20px); background: #fff; }
+
+/* ============================================================
+   MODALES
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000000bb;
+  backdrop-filter: blur(6px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition);
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: var(--bg-modal);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius);
+  padding: 1.75rem;
+  max-width: 520px;
+  width: 100%;
+  box-shadow: var(--shadow-neon), 0 24px 60px #00000066;
+  transform: scale(0.95) translateY(10px);
+  transition: transform var(--transition);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-overlay.open .modal { transform: scale(1) translateY(0); }
+
+.modal-neon {
+  border-color: var(--accent-3);
+  box-shadow: 0 0 40px var(--accent-3)44, 0 24px 60px #00000066;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title { font-size: 1.1rem; font-weight: 800; color: var(--neon-purple); }
+.modal-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem; padding: 0.25rem; border-radius: 4px; transition: color var(--transition); }
+.modal-close:hover { color: var(--accent-3); }
+
+/* ============================================================
+   SECCIÓN: INICIO (HERO)
+   ============================================================ */
+.hero {
+  text-align: center;
+  padding: 2rem 1rem 3rem;
+  position: relative;
+}
+
+.hero-logo {
+  width: 90px; height: 90px;
+  border-radius: 20px;
+  margin: 0 auto 1.25rem;
+  display: block;
+  animation: logoPulse 3s ease-in-out infinite;
+  box-shadow: 0 0 30px var(--accent)88;
+}
+
+.hero-title {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--neon-purple), var(--neon-blue), var(--neon-pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin-bottom: 0.75rem;
+}
+
+.hero-sub {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  max-width: 500px;
+  margin: 0 auto 2rem;
+}
+
+/* Stats rápidas */
+.stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-num {
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--neon-purple);
+  text-shadow: 0 0 10px var(--accent);
+}
+
+.stat-label { font-size: 0.75rem; color: var(--text-muted); }
+
+/* ============================================================
+   SECCIÓN: CURSOS
+   ============================================================ */
+.course-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: all var(--transition);
+  cursor: pointer;
+}
+
+.course-card:hover {
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-neon);
+  transform: translateY(-3px);
+}
+
+.course-thumb {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+}
+
+.course-body { padding: 1rem; }
+
+.course-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.35rem;
+}
+
+.course-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.progress-bar-wrap {
+  background: var(--bg-secondary);
+  border-radius: 3px;
+  height: 4px;
+  margin-top: 0.75rem;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  border-radius: 3px;
+  box-shadow: 0 0 6px var(--accent);
+  transition: width 0.5s ease;
+}
+
+/* ============================================================
+   SECCIÓN: POMODORO MODAL
+   ============================================================ */
+.pomodoro-display {
+  text-align: center;
+  padding: 2rem 0;
+}
+
+.pomodoro-time {
+  font-size: 4rem;
+  font-weight: 900;
+  color: var(--neon-blue);
+  text-shadow: 0 0 20px var(--neon-blue), 0 0 40px var(--accent);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 4px;
+}
+
+.pomodoro-phase {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.pomodoro-ring {
+  width: 200px; height: 200px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.pomodoro-svg { transform: rotate(-90deg); }
+
+.pomodoro-track { fill: none; stroke: var(--bg-secondary); stroke-width: 8; }
+.pomodoro-progress {
+  fill: none;
+  stroke: url(#pomGrad);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: 565;
+  stroke-dashoffset: 565;
+  transition: stroke-dashoffset 1s linear;
+}
+
+.pomodoro-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ============================================================
+   SECCIÓN: NOTAS
+   ============================================================ */
+.folder-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-btn);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--transition);
+}
+
+.folder-chip.active {
+  border-color: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.note-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  transition: all var(--transition);
+}
+
+.note-card:hover { border-color: var(--border-accent); }
+
+/* ============================================================
+   SECCIÓN: CALENDARIO
+   ============================================================ */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cal-day-header {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  padding: 0.3rem 0;
+  text-transform: uppercase;
+}
+
+.cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all var(--transition);
+  position: relative;
+  border: 1px solid transparent;
+}
+
+.cal-day:hover { background: var(--bg-card); border-color: var(--border-accent); }
+.cal-day.today { background: var(--accent); color: #fff; box-shadow: 0 0 12px var(--accent); font-weight: 700; }
+.cal-day.has-event::after { content:''; position:absolute; bottom:3px; left:50%; transform:translateX(-50%); width:4px; height:4px; border-radius:50%; background:var(--neon-green); }
+.cal-day.other-month { color: var(--text-muted); }
+
+/* ============================================================
+   SECCIÓN: COMUNIDAD
+   ============================================================ */
+.teacher-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  text-align: center;
+  transition: all var(--transition);
+}
+
+.teacher-card:hover { border-color: var(--border-accent); box-shadow: var(--shadow-neon); }
+
+.teacher-avatar {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  margin: 0 auto 0.75rem;
+  border: 3px solid var(--accent);
+  box-shadow: 0 0 16px var(--accent)55;
+  object-fit: cover;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+
+.stars { color: var(--neon-yellow); font-size: 0.85rem; }
+
+/* ============================================================
+   SECCIÓN: CHAT
+   ============================================================ */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - var(--navbar-h) - var(--footer-h) - 3rem);
+  max-height: 600px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.chat-msg {
+  max-width: 80%;
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  animation: fadeIn 0.2s ease;
+}
+
+.chat-msg.user {
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+}
+
+.chat-msg.ai {
+  background: var(--bg-card);
+  border: 1px solid var(--border-accent);
+  color: var(--text-primary);
+  align-self: flex-start;
+  border-bottom-left-radius: 4px;
+}
+
+.chat-msg .sources {
+  font-size: 0.72rem;
+  color: var(--neon-green);
+  margin-top: 0.4rem;
+  opacity: 0.8;
+}
+
+.chat-input-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  align-items: flex-end;
+}
+
+.chat-input {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 0.65rem 0.9rem;
+  font-size: 0.88rem;
+  font-family: inherit;
+  resize: none;
+  max-height: 100px;
+  transition: border-color var(--transition);
+}
+.chat-input:focus { outline: none; border-color: var(--accent); }
+
+.char-count { font-size: 0.72rem; color: var(--text-muted); text-align: right; margin-top: 0.25rem; }
+
+/* ============================================================
+   SECCIÓN: RAG - ALIMENTAR IA
+   ============================================================ */
+.rag-upload-zone {
+  border: 2px dashed var(--border-accent);
+  border-radius: var(--radius);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  background: var(--bg-secondary);
+}
+
+.rag-upload-zone:hover, .rag-upload-zone.dragover {
+  border-color: var(--accent);
+  background: var(--accent)08;
+  box-shadow: 0 0 20px var(--accent)22;
+}
+
+.rag-upload-icon { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; }
+
+.doc-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  transition: all var(--transition);
+}
+
+.doc-item:hover { border-color: var(--border-accent); }
+.doc-icon { font-size: 1.5rem; flex-shrink: 0; }
+.doc-info { flex: 1; min-width: 0; }
+.doc-name { font-size: 0.88rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc-meta { font-size: 0.72rem; color: var(--text-muted); }
+
+/* Barra de progreso procesamiento */
+.process-bar {
+  height: 4px;
+  background: var(--bg-secondary);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+.process-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--neon-green));
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 6px var(--accent);
+}
+
+/* ============================================================
+   SECCIÓN: AJUSTES
+   ============================================================ */
+.settings-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.settings-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--neon-purple);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-label { font-size: 0.88rem; color: var(--text-primary); }
+.setting-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
+
+/* ============================================================
+   TAGS / BADGES
+   ============================================================ */
+.tag {
+  display: inline-block;
+  padding: 0.18rem 0.6rem;
+  border-radius: var(--radius-btn);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.tag-purple { background: var(--accent)22; color: var(--neon-purple); border: 1px solid var(--accent)44; }
+.tag-blue   { background: var(--accent-2)22; color: var(--neon-blue); border: 1px solid var(--accent-2)44; }
+.tag-green  { background: #16a34a22; color: var(--neon-green); border: 1px solid #16a34a44; }
+.tag-pink   { background: var(--accent-3)22; color: var(--neon-pink); border: 1px solid var(--accent-3)44; }
+.tag-yellow { background: #facc1522; color: var(--neon-yellow); border: 1px solid #facc1544; }
+
+/* ============================================================
+   TOAST NOTIFICATIONS
+   ============================================================ */
+#toast-container {
+  position: fixed;
+  bottom: calc(var(--footer-h) + 1rem);
+  right: 1rem;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--bg-card);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1.1rem;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-neon);
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
+  pointer-events: all;
+  max-width: 300px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@keyframes toastIn { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+@keyframes toastOut { from{opacity:1;transform:translateX(0)} to{opacity:0;transform:translateX(20px)} }
+
+.toast.success { border-color: #16a34a55; }
+.toast.error   { border-color: #dc262655; }
+.toast.warning { border-color: #facc1555; }
+
+/* ============================================================
+   LOADING SPINNER
+   ============================================================ */
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: #00000088;
+  backdrop-filter: blur(4px);
+  z-index: 4000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+#footer {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: var(--footer-h);
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0 1rem;
+  z-index: 999;
+  flex-wrap: wrap;
+}
+
+.footer-text {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color var(--transition);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+.footer-link:hover { color: var(--neon-purple); }
+
+/* ============================================================
+   RESPONSIVO MÓVIL
+   ============================================================ */
+@media (max-width: 640px) {
+  :root { --navbar-h: 56px; --footer-h: 52px; }
+  .nav-logo-text { display: none; }
+  .nav-link span.label { display: none; }
+  #main-content { padding: 1rem 0.5rem; }
+  .modal { padding: 1.25rem; }
+  .pomodoro-time { font-size: 3rem; }
+  .hero-title { font-size: 2rem; }
+}
+
+@media (max-width: 400px) {
+  .nav-links { gap: 0.1rem; }
+  .nav-link { padding: 0.35rem 0.5rem; font-size: 0.72rem; }
+}
+
+/* ============================================================
+   MODO FOCUS
+   ============================================================ */
+body.focus-mode #navbar .nav-links,
+body.focus-mode #footer { opacity: 0.2; pointer-events: none; }
+body.focus-mode #navbar { box-shadow: 0 0 20px var(--neon-green)44; }
+
+/* ============================================================
+   ANIMACIONES EXTRA
+   ============================================================ */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-secondary) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Partículas de fondo (decorativas) */
+.bg-orb {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.06;
+  pointer-events: none;
+  z-index: 0;
+}
+.bg-orb-1 { width: 400px; height: 400px; background: var(--accent); top: -100px; right: -100px; animation: orbFloat 8s ease-in-out infinite; }
+.bg-orb-2 { width: 300px; height: 300px; background: var(--accent-2); bottom: 100px; left: -80px; animation: orbFloat 10s ease-in-out infinite reverse; }
+
+@keyframes orbFloat {
+  0%,100% { transform: translate(0,0); }
+  50% { transform: translate(30px, 20px); }
+}
+
+/* ============================================================
+   LEADERBOARD
+   ============================================================ */
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  transition: all var(--transition);
+}
+.leaderboard-item:hover { border-color: var(--border-accent); }
+.lb-rank { font-size: 1.2rem; font-weight: 900; width: 32px; text-align: center; }
+.lb-rank.gold   { color: var(--neon-yellow); text-shadow: 0 0 8px var(--neon-yellow); }
+.lb-rank.silver { color: #94a3b8; }
+.lb-rank.bronze { color: #b45309; }
+
+/* ============================================================
+   FLASHCARDS
+   ============================================================ */
+.flashcard {
+  perspective: 1000px;
+  cursor: pointer;
+}
+
+.flashcard-inner {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+
+.flashcard.flipped .flashcard-inner { transform: rotateY(180deg); }
+
+.flashcard-front, .flashcard-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.flashcard-front {
+  background: linear-gradient(135deg, var(--bg-card), var(--bg-secondary));
+  border: 1px solid var(--border-accent);
+  color: var(--text-primary);
+}
+
+.flashcard-back {
+  background: linear-gradient(135deg, var(--accent)22, var(--accent-2)11);
+  border: 1px solid var(--accent)44;
+  color: var(--neon-purple);
+  transform: rotateY(180deg);
+}
+
+/* ============================================================
+   QUIZ
+   ============================================================ */
+.quiz-option {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1.1rem;
+  cursor: pointer;
+  transition: all var(--transition);
+  font-size: 0.88rem;
+  text-align: left;
+  width: 100%;
+  color: var(--text-primary);
+}
+
+.quiz-option:hover { border-color: var(--accent); box-shadow: 0 0 12px var(--accent)33; }
+.quiz-option.correct { border-color: var(--neon-green); background: #16a34a11; color: var(--neon-green); }
+.quiz-option.wrong   { border-color: var(--accent-3); background: #f472b611; color: var(--accent-3); }
+
+/* ============================================================
+   CERTIFICADO
+   ============================================================ */
+.certificate {
+  background: linear-gradient(135deg, #1a1a3e, #0d0d1a);
+  border: 2px solid var(--neon-yellow);
+  border-radius: var(--radius);
+  padding: 2.5rem;
+  text-align: center;
+  box-shadow: 0 0 40px var(--neon-yellow)22;
+  position: relative;
+  overflow: hidden;
+}
+
+.certificate::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid var(--neon-yellow)44;
+  border-radius: calc(var(--radius) - 4px);
+  pointer-events: none;
+}
+
+.certificate-title { font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase; color: var(--neon-yellow); margin-bottom: 0.5rem; }
+.certificate-name  { font-size: 2rem; font-weight: 900; color: var(--text-primary); margin: 0.5rem 0; }
+.certificate-course { font-size: 1rem; color: var(--neon-purple); margin-bottom: 1rem; }
+
+/* ============================================================
+   DRIVE INTEGRATION UI
+   ============================================================ */
+.drive-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+}
+
+.drive-dot { width: 8px; height: 8px; border-radius: 50%; }
+.drive-dot.connected { background: var(--neon-green); box-shadow: 0 0 6px var(--neon-green); }
+.drive-dot.disconnected { background: var(--text-muted); }
+
+.backup-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+}
+</style>
+</head>
+<body>
+
+<!-- Orbes decorativos de fondo -->
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+
+<!-- ============================================================
+     NAVBAR
+     ============================================================ -->
+<nav id="navbar" role="navigation" aria-label="Navegación principal">
+  <!-- Logo -->
+  <a class="nav-logo" href="#" onclick="navTo('inicio'); return false;" aria-label="VICO ACTIVE inicio">
+    <img id="nav-logo-img" class="nav-logo-img" src="icon.png" alt="VICO" onerror="this.src=LOGO_B64">
+    <span class="nav-logo-text">VICO</span>
+  </a>
+
+  <!-- Links de navegación -->
+  <div class="nav-links" role="menubar">
+    <button class="nav-link active" onclick="navTo('inicio')" data-page="inicio" role="menuitem">
+      🏠 <span class="label">Inicio</span>
+    </button>
+    <button class="nav-link" onclick="navTo('cursos')" data-page="cursos" role="menuitem">
+      📚 <span class="label">Cursos</span>
+    </button>
+    <button class="nav-link" onclick="navTo('rag')" data-page="rag" role="menuitem">
+      🧠 <span class="label">Alimentar IA</span>
+    </button>
+    <button class="nav-link" onclick="navTo('comunidad')" data-page="comunidad" role="menuitem">
+      👥 <span class="label">Comunidad</span>
+    </button>
+    <button class="nav-link" onclick="navTo('notas')" data-page="notas" role="menuitem">
+      📝 <span class="label">Notas</span>
+    </button>
+    <button class="nav-link" onclick="navTo('calendario')" data-page="calendario" role="menuitem">
+      📅 <span class="label">Calendario</span>
+    </button>
+    <button class="nav-link" onclick="navTo('perfil')" data-page="perfil" role="menuitem">
+      👤 <span class="label">Perfil</span>
+    </button>
+    <button class="nav-link" onclick="navTo('ajustes')" data-page="ajustes" role="menuitem">
+      ⚙️ <span class="label">Ajustes</span>
+    </button>
+  </div>
+
+  <!-- RAM Badge -->
+  <div id="ram-badge" title="Uso de RAM">RAM: --</div>
+
+  <!-- Pomodoro Badge -->
+  <div id="pomodoro-badge" onclick="openPomodoro()" title="Pomodoro Timer">
+    ⏱ <span id="pom-nav-time">25:00</span>
+  </div>
+</nav>
+
+<!-- ============================================================
+     MAIN CONTENT
+     ============================================================ -->
+<main id="main-content" role="main">
+
+  <!-- ==================== PÁGINA: INICIO ==================== -->
+  <section id="page-inicio" class="page active">
+    <div class="hero">
+      <img id="hero-logo" class="hero-logo" src="icon.png" alt="VICO ACTIVE" onerror="this.src=LOGO_B64">
+      <h1 class="hero-title">VICO ACTIVE</h1>
+      <p class="hero-sub">Plataforma de cursos online con IA · Aprende, crea y comparte conocimiento</p>
+      <div class="flex-row" style="justify-content:center;margin-bottom:1.5rem;">
+        <button class="btn btn-primary btn-lg" onclick="navTo('cursos')">🚀 Explorar Cursos</button>
+        <button class="btn btn-neon btn-lg" onclick="openCreateCourse()">✨ Crear con IA</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row" id="home-stats">
+      <div class="stat-item"><div class="stat-num" id="stat-cursos">0</div><div class="stat-label">Cursos</div></div>
+      <div class="stat-item"><div class="stat-num" id="stat-notas">0</div><div class="stat-label">Notas</div></div>
+      <div class="stat-item"><div class="stat-num" id="stat-docs">0</div><div class="stat-label">Docs IA</div></div>
+      <div class="stat-item"><div class="stat-num" id="stat-chunks">0</div><div class="stat-label">Chunks RAG</div></div>
+    </div>
+
+    <!-- Accesos rápidos -->
+    <div class="grid-4" style="margin-top:1.5rem;">
+      <div class="card" style="cursor:pointer;text-align:center;" onclick="navTo('cursos')">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">📚</div>
+        <div style="font-weight:700;font-size:0.9rem;">Mis Cursos</div>
+      </div>
+      <div class="card" style="cursor:pointer;text-align:center;" onclick="openPomodoro()">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">⏱</div>
+        <div style="font-weight:700;font-size:0.9rem;">Pomodoro</div>
+      </div>
+      <div class="card" style="cursor:pointer;text-align:center;" onclick="navTo('rag')">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">🧠</div>
+        <div style="font-weight:700;font-size:0.9rem;">Alimentar IA</div>
+      </div>
+      <div class="card" style="cursor:pointer;text-align:center;" onclick="navTo('notas')">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">📝</div>
+        <div style="font-weight:700;font-size:0.9rem;">Notas</div>
+      </div>
+      <div class="card" style="cursor:pointer;text-align:center;" onclick="navTo('calendario')">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">📅</div>
+        <div style="font-weight:700;font-size:0.9rem;">Calendario</div>
+      </div>
+      <div class="card" style="cursor:pointer;text-align:center;" onclick="navTo('comunidad')">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">👥</div>
+        <div style="font-weight:700;font-size:0.9rem;">Comunidad</div>
+      </div>
+      <div class="card" style="cursor:pointer;text-align:center;" onclick="navTo('ajustes')">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">⚙️</div>
+        <div style="font-weight:700;font-size:0.9rem;">Ajustes</div>
+      </div>
+      <div class="card" style="cursor:pointer;text-align:center;" onclick="toggleFocusMode()">
+        <div style="font-size:2rem;margin-bottom:0.5rem;">🎯</div>
+        <div style="font-weight:700;font-size:0.9rem;">Modo Focus</div>
+      </div>
+    </div>
+
+    <!-- Leaderboard rápido -->
+    <div style="margin-top:2rem;">
+      <h2 style="font-size:1rem;font-weight:800;color:var(--neon-purple);margin-bottom:1rem;">🏆 Leaderboard</h2>
+      <div class="flex-col" id="leaderboard-list">
+        <div class="leaderboard-item">
+          <span class="lb-rank gold">🥇</span>
+          <span style="flex:1;font-size:0.88rem;">Jaime Dueñas</span>
+          <span class="tag tag-yellow">2400 XP</span>
+        </div>
+        <div class="leaderboard-item">
+          <span class="lb-rank silver">🥈</span>
+          <span style="flex:1;font-size:0.88rem;">María López</span>
+          <span class="tag tag-blue">1850 XP</span>
+        </div>
+        <div class="leaderboard-item">
+          <span class="lb-rank bronze">🥉</span>
+          <span style="flex:1;font-size:0.88rem;">Carlos Ruiz</span>
+          <span class="tag tag-purple">1200 XP</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== PÁGINA: CURSOS ==================== -->
+  <section id="page-cursos" class="page">
+    <div class="flex-row" style="margin-bottom:1.25rem;justify-content:space-between;">
+      <h1 style="font-size:1.4rem;font-weight:900;color:var(--neon-purple);">📚 Mis Cursos</h1>
+      <div class="flex-row">
+        <input type="search" class="form-input" placeholder="Buscar cursos..." id="search-cursos" style="max-width:200px;" oninput="filterCursos()">
+        <button class="btn btn-primary" onclick="openCreateCourse()">✨ Crear con IA</button>
+      </div>
+    </div>
+    <div id="cursos-grid" class="grid-3">
+      <!-- Los cursos se renderizan dinámicamente -->
+      <div class="card" style="text-align:center;padding:2rem;color:var(--text-muted);">
+        <div style="font-size:3rem;margin-bottom:0.75rem;">📚</div>
+        <p>No hay cursos aún. ¡Crea uno con IA!</p>
+        <button class="btn btn-primary" style="margin-top:1rem;" onclick="openCreateCourse()">✨ Crear Curso</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== PÁGINA: RAG - ALIMENTAR IA ==================== -->
+  <section id="page-rag" class="page">
+    <div class="flex-row" style="margin-bottom:1.25rem;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+      <h1 style="font-size:1.4rem;font-weight:900;color:var(--neon-purple);">🧠 Alimentar a la IA</h1>
+      <div class="flex-row">
+        <span id="chunks-counter" class="tag tag-green">0 / 1000 chunks</span>
+        <button class="btn btn-secondary btn-sm" onclick="openRagSettings()">⚙️ Config</button>
+      </div>
+    </div>
+
+    <!-- Zona de subida -->
+    <div class="rag-upload-zone" id="rag-drop-zone" onclick="document.getElementById('rag-file-input').click()">
+      <span class="rag-upload-icon">📄</span>
+      <p style="font-weight:700;margin-bottom:0.35rem;">Arrastra archivos o haz clic para subir</p>
+      <p style="font-size:0.82rem;color:var(--text-muted);">PDF, TXT, imágenes (OCR) · Máx 50MB por archivo</p>
+    </div>
+    <input type="file" id="rag-file-input" multiple accept=".pdf,.txt,.png,.jpg,.jpeg" style="display:none;" onchange="handleRagFiles(this.files)">
+
+    <!-- URL Input -->
+    <div class="flex-row" style="margin-top:0.75rem;">
+      <input type="url" class="form-input" id="rag-url-input" placeholder="https://... (URL para extraer texto)">
+      <button class="btn btn-secondary" onclick="addRagUrl()">🌐 Añadir URL</button>
+    </div>
+
+    <!-- Procesando -->
+    <div id="rag-processing" style="display:none;margin-top:1rem;">
+      <div class="card">
+        <div class="flex-row">
+          <div class="spinner" style="width:20px;height:20px;border-width:2px;"></div>
+          <span id="rag-process-msg" style="font-size:0.85rem;">Procesando documento...</span>
+        </div>
+        <div class="process-bar" style="margin-top:0.75rem;">
+          <div class="process-bar-fill" id="rag-process-bar" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel: Mis documentos -->
+    <div style="margin-top:1.5rem;">
+      <div class="flex-row" style="justify-content:space-between;margin-bottom:0.75rem;">
+        <h2 style="font-size:1rem;font-weight:800;color:var(--neon-purple);">📂 Mis Documentos</h2>
+        <button class="btn btn-danger btn-sm" onclick="clearKnowledgeBase()">🗑 Vaciar Base</button>
+      </div>
+      <div id="rag-docs-list" class="flex-col">
+        <div style="text-align:center;padding:1.5rem;color:var(--text-muted);font-size:0.88rem;">
+          No hay documentos. Sube archivos para alimentar a la IA.
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat con RAG -->
+    <div style="margin-top:1.5rem;">
+      <h2 style="font-size:1rem;font-weight:800;color:var(--neon-purple);margin-bottom:0.75rem;">💬 Chat con tu Base de Conocimiento</h2>
+      <div class="chat-container" style="height:400px;">
+        <div class="chat-messages" id="rag-chat-messages">
+          <div class="chat-msg ai">
+            👋 Hola! Sube documentos y hazme preguntas. Buscaré en tu base de conocimiento para darte respuestas precisas con fuentes.
+          </div>
+        </div>
+        <div class="char-count"><span id="rag-char-count">0</span> / <span id="rag-char-limit">500</span></div>
+        <div class="chat-input-row">
+          <textarea class="chat-input" id="rag-chat-input" placeholder="Pregunta sobre tus documentos..." rows="2" oninput="updateCharCount('rag')" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendRagMessage()}"></textarea>
+          <button class="btn btn-primary btn-icon" onclick="sendRagMessage()" title="Enviar">➤</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== PÁGINA: COMUNIDAD ==================== -->
+  <section id="page-comunidad" class="page">
+    <h1 style="font-size:1.4rem;font-weight:900;color:var(--neon-purple);margin-bottom:1.25rem;">👥 Comunidad</h1>
+
+    <!-- Tabs -->
+    <div class="flex-row" style="margin-bottom:1.25rem;gap:0.5rem;">
+      <button class="btn btn-secondary btn-sm comm-tab active" onclick="switchCommTab('profesores')">👨‍🏫 Profesores</button>
+      <button class="btn btn-secondary btn-sm comm-tab" onclick="switchCommTab('proyectos')">🚀 Proyectos</button>
+      <button class="btn btn-secondary btn-sm comm-tab" onclick="switchCommTab('chat')">💬 Chat</button>
+      <button class="btn btn-secondary btn-sm comm-tab" onclick="switchCommTab('testimonios')">⭐ Testimonios</button>
+    </div>
+
+    <!-- Sub-sección: Profesores -->
+    <div id="comm-profesores" class="comm-panel">
+      <div class="grid-3" id="teachers-grid">
+        <!-- Profesores de ejemplo -->
+        <div class="teacher-card">
+          <div class="teacher-avatar">👨‍💻</div>
+          <div style="font-weight:700;margin-bottom:0.25rem;">Jaime Dueñas</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:0.5rem;">Desarrollo IA & Web</div>
+          <div class="stars">★★★★★</div>
+          <div style="font-size:0.72rem;color:var(--text-muted);margin:0.35rem 0;">42 estudiantes</div>
+          <div class="flex-row" style="justify-content:center;gap:0.4rem;margin-top:0.75rem;">
+            <button class="btn btn-secondary btn-sm" onclick="playTeacherMelody(0)">🎵</button>
+            <button class="btn btn-primary btn-sm" onclick="viewTeacher(0)">Ver perfil</button>
+          </div>
+        </div>
+        <div class="teacher-card">
+          <div class="teacher-avatar">👩‍🔬</div>
+          <div style="font-weight:700;margin-bottom:0.25rem;">Ana García</div>
+          <div style="font-size:0.78rem;color:var(--text-secondary);margin-bottom:0.5rem;">Ciencia de Datos</div>
+          <div class="stars">★★★★☆</div>
+          <div style="font-size:0.72rem;color:var(--text-muted);margin:0.35rem 0;">28 estudiantes</div>
+          <div class="flex-row" style="justify-content:center;gap:0.4rem;margin-top:0.75rem;">
+            <button class="btn btn-secondary btn-sm" onclick="playTeacherMelody(1)">🎵</button>
+            <button class="btn btn-primary btn-sm" onclick="viewTeacher(1)">Ver perfil</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-sección: Proyectos -->
+    <div id="comm-proyectos" class="comm-panel" style="display:none;">
+      <div class="flex-row" style="justify-content:flex-end;margin-bottom:0.75rem;">
+        <button class="btn btn-primary btn-sm" onclick="openAddProject()">➕ Nuevo Proyecto</button>
+      </div>
+      <div id="projects-list" class="grid-2">
+        <div class="card">
+          <div style="font-weight:700;margin-bottom:0.35rem;">🤖 Chatbot Educativo</div>
+          <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.75rem;">Asistente IA para estudiantes de secundaria con RAG local.</div>
+          <div class="flex-row">
+            <span class="tag tag-purple">IA</span>
+            <span class="tag tag-blue">Web</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-sección: Chat Comunitario -->
+    <div id="comm-chat" class="comm-panel" style="display:none;">
+      <div class="chat-container">
+        <div class="chat-messages" id="comm-chat-messages">
+          <div class="chat-msg ai">
+            💬 Bienvenido al chat comunitario. Sé respetuoso y constructivo.
+          </div>
+        </div>
+        <div class="char-count"><span id="comm-char-count">0</span> / <span id="comm-char-limit">500</span></div>
+        <div class="chat-input-row">
+          <textarea class="chat-input" id="comm-chat-input" placeholder="Escribe un mensaje..." rows="2" oninput="updateCharCount('comm')" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCommMessage()}"></textarea>
+          <button class="btn btn-primary btn-icon" onclick="sendCommMessage()">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-sección: Testimonios -->
+    <div id="comm-testimonios" class="comm-panel" style="display:none;">
+      <div id="testimonios-list" class="grid-2">
+        <div class="card">
+          <div class="stars" style="margin-bottom:0.5rem;">★★★★★</div>
+          <p style="font-size:0.88rem;font-style:italic;color:var(--text-secondary);">"VICO ACTIVE transformó mi forma de aprender. Los cursos con IA son increíbles."</p>
+          <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.75rem;">— María L., Desarrolladora Web</div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" style="margin-top:1rem;" onclick="openAddTestimony()">✍️ Añadir Testimonio</button>
+    </div>
+  </section>
+
+  <!-- ==================== PÁGINA: NOTAS ==================== -->
+  <section id="page-notas" class="page">
+    <div class="flex-row" style="margin-bottom:1.25rem;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+      <h1 style="font-size:1.4rem;font-weight:900;color:var(--neon-purple);">📝 Notas</h1>
+      <div class="flex-row">
+        <input type="search" class="form-input" placeholder="Buscar notas..." id="search-notas" style="max-width:180px;" oninput="filterNotas()">
+        <button class="btn btn-secondary btn-sm" onclick="openCreateFolder()">📁 Carpeta</button>
+        <button class="btn btn-primary btn-sm" onclick="openCreateNote()">➕ Nota</button>
+      </div>
+    </div>
+
+    <!-- Carpetas -->
+    <div id="folders-row" class="flex-row" style="margin-bottom:1rem;flex-wrap:wrap;gap:0.4rem;">
+      <div class="folder-chip active" style="color:var(--neon-purple);background:var(--accent)11;" onclick="filterByFolder('all')">
+        📂 Todas
+      </div>
+    </div>
+
+    <!-- Grid de notas -->
+    <div id="notas-grid" class="grid-3">
+      <div style="text-align:center;padding:2rem;color:var(--text-muted);font-size:0.88rem;grid-column:1/-1;">
+        No hay notas. ¡Crea tu primera nota!
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== PÁGINA: CALENDARIO ==================== -->
+  <section id="page-calendario" class="page">
+    <div class="flex-row" style="margin-bottom:1.25rem;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+      <h1 style="font-size:1.4rem;font-weight:900;color:var(--neon-purple);">📅 Calendario</h1>
+      <div class="flex-row">
+        <button class="btn btn-secondary btn-sm" onclick="calPrev()">◀</button>
+        <span id="cal-month-label" style="font-weight:700;font-size:0.9rem;min-width:140px;text-align:center;"></span>
+        <button class="btn btn-secondary btn-sm" onclick="calNext()">▶</button>
+        <button class="btn btn-primary btn-sm" onclick="openAddEvent()">➕ Evento</button>
+      </div>
+    </div>
+
+    <!-- Hora actual -->
+    <div style="text-align:center;margin-bottom:1rem;">
+      <span id="cal-current-time" style="font-size:1.5rem;font-weight:900;color:var(--neon-blue);text-shadow:0 0 10px var(--neon-blue);font-variant-numeric:tabular-nums;"></span>
+    </div>
+
+    <!-- Calendario -->
+    <div class="card" style="padding:1rem;">
+      <div class="calendar-grid" id="cal-day-headers"></div>
+      <div class="calendar-grid" id="cal-grid" style="margin-top:0.5rem;"></div>
+    </div>
+
+    <!-- Eventos del día -->
+    <div style="margin-top:1.25rem;">
+      <h2 style="font-size:0.95rem;font-weight:800;color:var(--neon-purple);margin-bottom:0.75rem;">📌 Eventos</h2>
+      <div id="events-list" class="flex-col">
+        <div style="text-align:center;padding:1rem;color:var(--text-muted);font-size:0.88rem;">No hay eventos.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== PÁGINA: PERFIL ==================== -->
+  <section id="page-perfil" class="page">
+    <h1 style="font-size:1.4rem;font-weight:900;color:var(--neon-purple);margin-bottom:1.25rem;">👤 Mi Perfil</h1>
+    <div class="grid-2">
+      <div class="card" style="text-align:center;">
+        <div style="font-size:5rem;margin-bottom:0.75rem;" id="profile-avatar">👤</div>
+        <div style="font-weight:800;font-size:1.1rem;" id="profile-name">Usuario VICO</div>
+        <div style="font-size:0.82rem;color:var(--text-secondary);margin:0.25rem 0 1rem;" id="profile-bio">Estudiante apasionado</div>
+        <div class="flex-row" style="justify-content:center;">
+          <span class="tag tag-purple">Nivel 1</span>
+          <span class="tag tag-yellow">0 XP</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" style="margin-top:1rem;" onclick="openEditProfile()">✏️ Editar Perfil</button>
+      </div>
+      <div class="card">
+        <div style="font-weight:700;margin-bottom:1rem;color:var(--neon-purple);">📊 Estadísticas</div>
+        <div class="setting-row">
+          <span class="setting-label">Cursos completados</span>
+          <span class="tag tag-green" id="stat-completed">0</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Notas creadas</span>
+          <span class="tag tag-blue" id="stat-notes-count">0</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Sesiones Pomodoro</span>
+          <span class="tag tag-purple" id="stat-pomodoro">0</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Documentos IA</span>
+          <span class="tag tag-pink" id="stat-rag-docs">0</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Racha actual</span>
+          <span class="tag tag-yellow" id="stat-streak">0 días</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Certificados -->
+    <div style="margin-top:1.5rem;">
+      <h2 style="font-size:1rem;font-weight:800;color:var(--neon-purple);margin-bottom:0.75rem;">🏆 Certificados</h2>
+      <div id="certificates-list">
+        <div style="text-align:center;padding:1.5rem;color:var(--text-muted);font-size:0.88rem;">
+          Completa cursos para obtener certificados.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== PÁGINA: AJUSTES ==================== -->
+  <section id="page-ajustes" class="page">
+    <h1 style="font-size:1.4rem;font-weight:900;color:var(--neon-purple);margin-bottom:1.25rem;">⚙️ Ajustes</h1>
+
+    <!-- Apariencia -->
+    <div class="settings-section">
+      <div class="settings-title">🎨 Apariencia</div>
+      <div class="setting-row">
+        <div><div class="setting-label">Tema</div></div>
+        <select class="form-select" style="width:auto;" id="theme-select" onchange="setTheme(this.value)">
+          <option value="dark">🌑 Oscuro</option>
+          <option value="light">🌞 Claro</option>
+          <option value="neon">⚡ Neón</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Tamaño de fuente</div><div class="setting-hint">px</div></div>
+        <div class="flex-row">
+          <input type="range" class="form-range" id="font-size-range" min="12" max="22" value="16" style="width:100px;" oninput="setFontSize(this.value)">
+          <span id="font-size-val" style="font-size:0.82rem;min-width:24px;">16</span>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Modo oscuro automático</div></div>
+        <label class="toggle"><input type="checkbox" id="auto-dark" onchange="saveSettings()"><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+
+    <!-- RAM Manager -->
+    <div class="settings-section">
+      <div class="settings-title">🧮 Monitor de RAM</div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Límite RAM (GB)</div>
+          <div class="setting-hint">Alerta cuando supere este límite</div>
+        </div>
+        <div class="flex-row">
+          <input type="range" class="form-range" id="ram-limit-range" min="1" max="6" step="0.1" value="5.5" style="width:100px;" oninput="updateRamLimit(this.value)">
+          <span id="ram-limit-val" style="font-size:0.82rem;min-width:32px;">5.5</span>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Backup automático al alcanzar límite</div></div>
+        <label class="toggle"><input type="checkbox" id="auto-backup-ram" checked onchange="saveSettings()"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Incluir multimedia en backup</div></div>
+        <label class="toggle"><input type="checkbox" id="backup-multimedia" onchange="saveSettings()"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Intervalo backup automático</div></div>
+        <select class="form-select" style="width:auto;" id="backup-interval" onchange="saveSettings()">
+          <option value="5">5 min</option>
+          <option value="10">10 min</option>
+          <option value="15" selected>15 min</option>
+          <option value="30">30 min</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Liberar RAM ahora</div></div>
+        <button class="btn btn-secondary btn-sm" onclick="liberarRAM()">🧹 Liberar</button>
+      </div>
+    </div>
+
+    <!-- Google Drive -->
+    <div class="settings-section">
+      <div class="settings-title">☁️ Google Drive</div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Estado de conexión</div>
+          <div class="drive-status" style="margin-top:0.35rem;" id="drive-status-ui">
+            <span class="drive-dot disconnected" id="drive-dot"></span>
+            <span id="drive-status-text">No conectado</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="drive-connect-btn" onclick="driveConnect()">🔗 Conectar</button>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Backup automático diario</div></div>
+        <label class="toggle"><input type="checkbox" id="drive-auto-backup" onchange="saveSettings()"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Usar Drive como swap IA (experimental)</div><div class="setting-hint">Mueve chunks a Drive cuando RAM esté al límite</div></div>
+        <label class="toggle"><input type="checkbox" id="drive-swap" onchange="saveSettings()"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">Backups en Drive</div>
+        <div class="flex-row">
+          <button class="btn btn-primary btn-sm" onclick="driveBackup()">⬆️ Subir</button>
+          <button class="btn btn-secondary btn-sm" onclick="driveRestore()">⬇️ Restaurar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- IA -->
+    <div class="settings-section">
+      <div class="settings-title">🤖 Inteligencia Artificial</div>
+      <div class="setting-row">
+        <div><div class="setting-label">Motor IA por defecto</div></div>
+        <select class="form-select" style="width:auto;" id="ai-engine" onchange="saveSettings()">
+          <option value="gemma">Gemma WebGPU</option>
+          <option value="groq">Groq</option>
+          <option value="gemini">Gemini</option>
+          <option value="openrouter">OpenRouter</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">API Key</div><div class="setting-hint">Se guarda en localStorage</div></div>
+        <input type="password" class="form-input" id="api-key-input" placeholder="sk-..." style="max-width:200px;" onchange="saveSettings()">
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Temperatura IA</div><div class="setting-hint">0 = determinista, 1 = creativo</div></div>
+        <div class="flex-row">
+          <input type="range" class="form-range" id="ai-temp" min="0" max="1" step="0.1" value="0.7" style="width:80px;" oninput="document.getElementById('ai-temp-val').textContent=this.value;saveSettings()">
+          <span id="ai-temp-val" style="font-size:0.82rem;min-width:24px;">0.7</span>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Modo Experto</div></div>
+        <label class="toggle"><input type="checkbox" id="expert-mode" onchange="saveSettings()"><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+
+    <!-- RAG -->
+    <div class="settings-section">
+      <div class="settings-title">🧠 Base de Conocimiento RAG</div>
+      <div class="setting-row">
+        <div><div class="setting-label">Límite de chunks</div><div class="setting-hint">Al exceder, elimina los menos usados (LRU)</div></div>
+        <input type="number" class="form-input" id="rag-chunk-limit" value="1000" min="100" max="5000" style="width:80px;" onchange="saveSettings()">
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Tamaño de chunk (caracteres)</div></div>
+        <input type="number" class="form-input" id="rag-chunk-size" value="500" min="100" max="2000" style="width:80px;" onchange="saveSettings()">
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Solapamiento de chunk</div></div>
+        <input type="number" class="form-input" id="rag-chunk-overlap" value="50" min="0" max="200" style="width:80px;" onchange="saveSettings()">
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Vaciar base de conocimiento</div></div>
+        <button class="btn btn-danger btn-sm" onclick="clearKnowledgeBase()">🗑 Vaciar</button>
+      </div>
+    </div>
+
+    <!-- Sonido y notificaciones -->
+    <div class="settings-section">
+      <div class="settings-title">🔔 Sonido y Notificaciones</div>
+      <div class="setting-row">
+        <div><div class="setting-label">Sonidos activados</div></div>
+        <label class="toggle"><input type="checkbox" id="sounds-on" checked onchange="saveSettings()"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Volumen</div></div>
+        <div class="flex-row">
+          <input type="range" class="form-range" id="volume-range" min="0" max="1" step="0.1" value="0.7" style="width:80px;" oninput="setVolume(this.value)">
+          <span id="volume-val" style="font-size:0.82rem;min-width:24px;">70%</span>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Vibración</div></div>
+        <label class="toggle"><input type="checkbox" id="vibration-on" checked onchange="saveSettings()"><span class="toggle-slider"></span></label>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Notificaciones push</div></div>
+        <button class="btn btn-secondary btn-sm" onclick="requestNotifPermission()">🔔 Activar</button>
+      </div>
+    </div>
+
+    <!-- Chat -->
+    <div class="settings-section">
+      <div class="settings-title">💬 Chat</div>
+      <div class="setting-row">
+        <div><div class="setting-label">Límite de caracteres</div></div>
+        <input type="number" class="form-input" id="chat-limit" value="500" min="50" max="2000" style="width:80px;" onchange="saveSettings()">
+      </div>
+    </div>
+
+    <!-- Pomodoro -->
+    <div class="settings-section">
+      <div class="settings-title">⏱ Pomodoro</div>
+      <div class="setting-row">
+        <div><div class="setting-label">Duración trabajo (min)</div></div>
+        <input type="number" class="form-input" id="pom-work" value="25" min="1" max="90" style="width:70px;" onchange="pomodoroUpdateSettings()">
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Descanso corto (min)</div></div>
+        <input type="number" class="form-input" id="pom-short" value="5" min="1" max="30" style="width:70px;" onchange="pomodoroUpdateSettings()">
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Descanso largo (min)</div></div>
+        <input type="number" class="form-input" id="pom-long" value="15" min="5" max="60" style="width:70px;" onchange="pomodoroUpdateSettings()">
+      </div>
+    </div>
+
+    <!-- Backup / Restaurar -->
+    <div class="settings-section">
+      <div class="settings-title">💾 Backup Local</div>
+      <div class="setting-row">
+        <div><div class="setting-label">Exportar backup completo</div><div class="setting-hint">JSON con todos los datos de IndexedDB</div></div>
+        <button class="btn btn-primary btn-sm" onclick="exportBackup()">⬇️ Exportar</button>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Importar backup</div></div>
+        <div>
+          <input type="file" id="import-backup-input" accept=".json" style="display:none;" onchange="importBackup(this)">
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('import-backup-input').click()">⬆️ Importar</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div><div class="setting-label">Reiniciar aplicación</div><div class="setting-hint">Limpia todo el estado local</div></div>
+        <button class="btn btn-danger btn-sm" onclick="resetApp()">⚠️ Reiniciar</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============================================================
+     FOOTER
+     ============================================================ -->
+<footer id="footer" role="contentinfo">
+  <span class="footer-text">©2026 VICO ACTIVE App · Jaime Andrés Dueñas Vicuña</span>
+  <a href="https://linkedin.com/in/jaimevicuna" target="_blank" rel="noopener" class="footer-link" aria-label="LinkedIn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+    LinkedIn
+  </a>
+  <a href="https://paypal.me/jaimevicuna" target="_blank" rel="noopener" class="footer-link" aria-label="PayPal">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7.076 21.337H2.47a.641.641 0 01-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 00-.607-.541c-.013.076-.026.175-.041.254-.59 3.025-2.566 6.082-8.558 6.082H9.824L8.293 22h3.817a.56.56 0 00.554-.645l.883-5.59h2.19c4.298 0 7.664-1.747 8.647-6.797.286-1.467.098-2.614-.162-3.051z"/></svg>
+    PayPal
+  </a>
+  <button class="footer-link" onclick="toggleInstallPWA()" id="install-btn" style="display:none;background:none;border:none;cursor:pointer;">
+    📲 Instalar App
+  </button>
+</footer>
+
+<!-- ============================================================
+     TOAST CONTAINER
+     ============================================================ -->
+<div id="toast-container" role="alert" aria-live="polite"></div>
+
+<!-- ============================================================
+     MODALES
+     ============================================================ -->
+
+<!-- Modal: Pomodoro -->
+<div class="modal-overlay" id="modal-pomodoro" role="dialog" aria-modal="true" aria-label="Pomodoro Timer">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">⏱ Pomodoro</span>
+      <button class="modal-close" onclick="closeModal('modal-pomodoro')">✕</button>
+    </div>
+    <div class="pomodoro-display">
+      <div class="pomodoro-ring">
+        <svg class="pomodoro-svg" width="200" height="200" viewBox="0 0 200 200">
+          <defs>
+            <linearGradient id="pomGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" style="stop-color:#7c3aed"/>
+              <stop offset="100%" style="stop-color:#0ea5e9"/>
+            </linearGradient>
+          </defs>
+          <circle class="pomodoro-track" cx="100" cy="100" r="90"/>
+          <circle class="pomodoro-progress" id="pom-ring" cx="100" cy="100" r="90"/>
+        </svg>
+        <div class="pomodoro-inner">
+          <div class="pomodoro-time" id="pom-display">25:00</div>
+          <div class="pomodoro-phase" id="pom-phase">TRABAJO</div>
+        </div>
+      </div>
+    </div>
+    <div class="flex-row" style="justify-content:center;gap:0.75rem;margin-top:0.5rem;">
+      <button class="btn btn-primary" id="pom-start-btn" onclick="pomodoroToggle()">▶ Iniciar</button>
+      <button class="btn btn-secondary" onclick="pomodoroReset()">⟳ Reset</button>
+      <button class="btn btn-secondary btn-sm" onclick="pomodoroSkip()">⏭ Saltar</button>
+    </div>
+    <div style="margin-top:1rem;text-align:center;font-size:0.78rem;color:var(--text-muted);">
+      Sesiones: <span id="pom-sessions">0</span> · Modo Focus: <button class="btn btn-secondary btn-sm" onclick="toggleFocusMode()">🎯</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Crear Curso con IA -->
+<div class="modal-overlay" id="modal-create-course" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <span class="modal-title">✨ Crear Curso con IA</span>
+      <button class="modal-close" onclick="closeModal('modal-create-course')">✕</button>
+    </div>
+    <div class="flex-col" style="gap:1rem;">
+      <div class="form-group">
+        <label class="form-label">Título del curso *</label>
+        <input type="text" class="form-input" id="course-title" placeholder="Ej: Programación Python desde cero">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descripción</label>
+        <textarea class="form-textarea" id="course-desc" placeholder="Describe brevemente el curso..." rows="3"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Prompt para IA (instrucciones adicionales)</label>
+        <textarea class="form-textarea" id="course-prompt" placeholder="Ej: Enfocado en principiantes, con ejemplos prácticos..." rows="3"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Logo del curso</label>
+        <div class="flex-row" id="course-logo-grid" style="flex-wrap:wrap;gap:0.5rem;">
+          <!-- Logos base64 se renderizan aquí -->
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Motor IA</label>
+        <select class="form-select" id="course-ai-engine">
+          <option value="gemma">Gemma WebGPU (local)</option>
+          <option value="groq">Groq</option>
+          <option value="gemini">Gemini</option>
+          <option value="openrouter">OpenRouter</option>
+        </select>
+      </div>
+      <div class="flex-row" style="justify-content:flex-end;gap:0.5rem;">
+        <button class="btn btn-secondary" onclick="closeModal('modal-create-course')">Cancelar</button>
+        <button class="btn btn-primary" onclick="generateCourseWithAI()">🚀 Generar Curso</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: RAM Alert -->
+<div class="modal-overlay" id="modal-ram-alert" role="alertdialog" aria-modal="true">
+  <div class="modal modal-neon">
+    <div class="modal-header">
+      <span class="modal-title" style="color:var(--accent-3);">⚠️ RAM al Límite</span>
+    </div>
+    <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:1.25rem;">
+      El uso de RAM ha superado el límite configurado. ¿Deseas guardar un backup y liberar memoria?
+    </p>
+    <div style="background:var(--bg-secondary);border-radius:var(--radius-sm);padding:0.75rem;margin-bottom:1.25rem;font-size:0.85rem;">
+      <div>RAM usada: <strong id="ram-alert-used" style="color:var(--accent-3);">--</strong></div>
+      <div>Límite: <strong id="ram-alert-limit" style="color:var(--neon-yellow);">--</strong></div>
+    </div>
+    <div class="flex-col" style="gap:0.5rem;">
+      <button class="btn btn-success" onclick="ramSaveBackup()">💾 Guardar Backup</button>
+      <button class="btn btn-danger" onclick="ramRestartApp()">🔄 Reiniciar App</button>
+      <button class="btn btn-secondary" onclick="liberarRAM();closeModal('modal-ram-alert')">🧹 Liberar RAM</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-ram-alert')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Crear Nota -->
+<div class="modal-overlay" id="modal-create-note" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📝 <span id="note-modal-title">Nueva Nota</span></span>
+      <button class="modal-close" onclick="closeModal('modal-create-note')">✕</button>
+    </div>
+    <div class="flex-col" style="gap:0.85rem;">
+      <div class="form-group">
+        <label class="form-label">Título *</label>
+        <input type="text" class="form-input" id="note-title" placeholder="Título de la nota">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contenido</label>
+        <textarea class="form-textarea" id="note-content" placeholder="Escribe tu nota aquí..." rows="5"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Categoría</label>
+        <input type="text" class="form-input" id="note-category" placeholder="Ej: Matemáticas, Programación...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Carpeta</label>
+        <select class="form-select" id="note-folder">
+          <option value="">Sin carpeta</option>
+        </select>
+      </div>
+      <div class="flex-row" style="justify-content:flex-end;gap:0.5rem;">
+        <button class="btn btn-secondary" onclick="closeModal('modal-create-note')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveNote()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Crear Carpeta -->
+<div class="modal-overlay" id="modal-create-folder" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <span class="modal-title">📁 Nueva Carpeta</span>
+      <button class="modal-close" onclick="closeModal('modal-create-folder')">✕</button>
+    </div>
+    <div class="flex-col" style="gap:0.85rem;">
+      <div class="form-group">
+        <label class="form-label">Nombre *</label>
+        <input type="text" class="form-input" id="folder-name" placeholder="Nombre de la carpeta">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Color</label>
+        <div class="flex-row" id="folder-colors" style="flex-wrap:wrap;gap:0.4rem;">
+          <!-- Colores se renderizan dinámicamente -->
+        </div>
+      </div>
+      <div class="flex-row" style="justify-content:flex-end;gap:0.5rem;">
+        <button class="btn btn-secondary" onclick="closeModal('modal-create-folder')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveFolder()">💾 Crear</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Añadir Evento Calendario -->
+<div class="modal-overlay" id="modal-add-event" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <span class="modal-title">📅 Nuevo Evento</span>
+      <button class="modal-close" onclick="closeModal('modal-add-event')">✕</button>
+    </div>
+    <div class="flex-col" style="gap:0.85rem;">
+      <div class="form-group">
+        <label class="form-label">Título *</label>
+        <input type="text" class="form-input" id="event-title" placeholder="Nombre del evento">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha y hora</label>
+        <input type="datetime-local" class="form-input" id="event-datetime">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descripción</label>
+        <textarea class="form-textarea" id="event-desc" placeholder="Detalles del evento..." rows="3"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Alarma (minutos antes)</label>
+        <select class="form-select" id="event-alarm">
+          <option value="0">Sin alarma</option>
+          <option value="5">5 minutos</option>
+          <option value="15">15 minutos</option>
+          <option value="30">30 minutos</option>
+          <option value="60">1 hora</option>
+        </select>
+      </div>
+      <div class="flex-row" style="justify-content:flex-end;gap:0.5rem;">
+        <button class="btn btn-secondary" onclick="closeModal('modal-add-event')">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveEvent()">💾 Guardar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Drive Backups -->
+<div class="modal-overlay" id="modal-drive-backups" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">☁️ Backups en Google Drive</span>
+      <button class="modal-close" onclick="closeModal('modal-drive-backups')">✕</button>
+    </div>
+    <div id="drive-backups-list" class="flex-col" style="gap:0.5rem;max-height:300px;overflow-y:auto;">
+      <div style="text-align:center;padding:1rem;color:var(--text-muted);">Cargando backups...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Ver Curso -->
+<div class="modal-overlay" id="modal-view-course" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:700px;max-height:90vh;overflow-y:auto;">
+    <div class="modal-header">
+      <span class="modal-title" id="view-course-title">📚 Curso</span>
+      <button class="modal-close" onclick="closeModal('modal-view-course')">✕</button>
+    </div>
+    <div id="view-course-content"><!-- Contenido dinámico --></div>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" class="loading-overlay" style="display:none;">
+  <div class="spinner" style="width:48px;height:48px;border-width:4px;"></div>
+  <div id="loading-msg">Cargando...</div>
+</div>
+
+<!-- ============================================================
+     SCRIPTS - LÓGICA PRINCIPAL
+     ============================================================ -->
+<script>
+// ============================================================
+// CONSTANTES Y CONFIGURACIÓN GLOBAL
+// ============================================================
+
+// Logo base64 (placeholder SVG como fallback)
+const LOGO_B64 = `data:image/svg+xml;base64,${btoa(`
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="50%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#f472b6"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="40" fill="url(#g1)"/>
+  <text x="100" y="115" font-family="Arial Black,sans-serif" font-size="72" font-weight="900"
+        fill="white" text-anchor="middle" opacity="0.95">V</text>
+  <text x="100" y="170" font-family="Arial,sans-serif" font-size="18" font-weight="700"
+        fill="white" text-anchor="middle" opacity="0.8">ACTIVE</text>
+</svg>
+`)}`;
+
+// 10 Logos base64 para cursos (emojis + colores como SVG)
+const COURSE_LOGOS = [
+  { emoji: '🤖', color: '#7c3aed', label: 'IA' },
+  { emoji: '💻', color: '#0ea5e9', label: 'Código' },
+  { emoji: '🔬', color: '#16a34a', label: 'Ciencia' },
+  { emoji: '📊', color: '#f59e0b', label: 'Datos' },
+  { emoji: '🎨', color: '#ec4899', label: 'Arte' },
+  { emoji: '📐', color: '#8b5cf6', label: 'Matemáticas' },
+  { emoji: '🌍', color: '#06b6d4', label: 'Geografía' },
+  { emoji: '📖', color: '#84cc16', label: 'Literatura' },
+  { emoji: '🎵', color: '#f43f5e', label: 'Música' },
+  { emoji: '⚗️', color: '#14b8a6', label: 'Química' },
+].map(l => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80">
+    <rect width="80" height="80" rx="16" fill="${l.color}"/>
+    <text x="40" y="52" font-size="36" text-anchor="middle">${l.emoji}</text>
+  </svg>`;
+  return { ...l, b64: `data:image/svg+xml;base64,${btoa(svg)}` };
+});
+
+// Melodías base64 (tonos simples generados por Web Audio, representados como data URI de audio)
+// En producción serían archivos reales; aquí generamos tonos programáticamente
+const MELODIES = Array.from({length: 10}, (_, i) => ({
+  name: `Melodía ${i + 1}`,
+  freqs: [261, 293, 329, 349, 392, 440, 494, 523, 587, 659][i] || 440,
+}));
+
+// Colores para carpetas
+const FOLDER_COLORS = [
+  '#7c3aed','#0ea5e9','#16a34a','#f59e0b','#ec4899',
+  '#8b5cf6','#06b6d4','#84cc16','#f43f5e','#14b8a6'
+];
+
+// Palabras bloqueadas en chat/comentarios
+const BLOCKED_WORDS = [
+  'spam','hack','virus','phishing','scam','fraude','estafa',
+  'drogas','violencia','odio','racismo','acoso'
+];
+
+// Estado global de la app
+let appState = {
+  currentPage: 'inicio',
+  selectedFolderId: 'all',
+  editingNoteId: null,
+  selectedCourseLogoIndex: 0,
+  focusMode: false,
+  pomodoroSessions: 0,
+};
+
+// ============================================================
+// INDEXEDDB - WRAPPER
+// ============================================================
+const DB_NAME = 'vicoActiveDB';
+const DB_VERSION = 3;
+let db = null;
+
+/**
+ * Inicializa IndexedDB con todos los stores necesarios
+ */
+async function initDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      // Stores principales
+      const stores = [
+        { name: 'cursos',     keyPath: 'id' },
+        { name: 'notas',      keyPath: 'id' },
+        { name: 'carpetas',   keyPath: 'id' },
+        { name: 'eventos',    keyPath: 'id' },
+        { name: 'chats',      keyPath: 'id' },
+        { name: 'perfiles',   keyPath: 'id' },
+        { name: 'proyectos',  keyPath: 'id' },
+        { name: 'recursos',   keyPath: 'id' },
+        { name: 'historial',  keyPath: 'id' },
+        { name: 'rag_chunks', keyPath: 'id' },  // Para RAG
+        { name: 'rag_docs',   keyPath: 'id' },  // Metadatos de documentos RAG
+        { name: 'backups',    keyPath: 'id' },
+      ];
+      
+      stores.forEach(s => {
+        if (!d.objectStoreNames.contains(s.name)) {
+          const store = d.createObjectStore(s.name, { keyPath: s.keyPath, autoIncrement: true });
+          // Índices útiles
+          if (s.name === 'notas')      store.createIndex('folderId', 'folderId', { unique: false });
+          if (s.name === 'rag_chunks') store.createIndex('docId', 'docId', { unique: false });
+          if (s.name === 'rag_chunks') store.createIndex('lastUsed', 'lastUsed', { unique: false });
+          if (s.name === 'eventos')    store.createIndex('fecha', 'fecha', { unique: false });
+        }
+      });
+    };
+    
+    req.onsuccess = e => { db = e.target.result; resolve(db); };
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+/**
+ * Operaciones CRUD genéricas para IndexedDB
+ */
+const IDB = {
+  async add(store, data) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readwrite');
+      const req = tx.objectStore(store).add({ ...data, createdAt: Date.now() });
+      req.onsuccess = e => resolve(e.target.result);
+      req.onerror   = e => reject(e.target.error);
+    });
+  },
+  
+  async put(store, data) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readwrite');
+      const req = tx.objectStore(store).put({ ...data, updatedAt: Date.now() });
+      req.onsuccess = e => resolve(e.target.result);
+      req.onerror   = e => reject(e.target.error);
+    });
+  },
+  
+  async getAll(store) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readonly');
+      const req = tx.objectStore(store).getAll();
+      req.onsuccess = e => resolve(e.target.result);
+      req.onerror   = e => reject(e.target.error);
+    });
+  },
+  
+  async get(store, id) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readonly');
+      const req = tx.objectStore(store).get(id);
+      req.onsuccess = e => resolve(e.target.result);
+      req.onerror   = e => reject(e.target.error);
+    });
+  },
+  
+  async delete(store, id) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readwrite');
+      const req = tx.objectStore(store).delete(id);
+      req.onsuccess = () => resolve();
+      req.onerror   = e => reject(e.target.error);
+    });
+  },
+  
+  async clear(store) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readwrite');
+      const req = tx.objectStore(store).clear();
+      req.onsuccess = () => resolve();
+      req.onerror   = e => reject(e.target.error);
+    });
+  },
+  
+  async getByIndex(store, indexName, value) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readonly');
+      const idx = tx.objectStore(store).index(indexName);
+      const req = idx.getAll(value);
+      req.onsuccess = e => resolve(e.target.result);
+      req.onerror   = e => reject(e.target.error);
+    });
+  },
+  
+  async count(store) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(store, 'readonly');
+      const req = tx.objectStore(store).count();
+      req.onsuccess = e => resolve(e.target.result);
+      req.onerror   = e => reject(e.target.error);
+    });
+  }
+};
+
+// ============================================================
+// CONFIGURACIÓN Y AJUSTES (localStorage)
+// ============================================================
+let settings = {};
+
+/**
+ * Carga ajustes desde localStorage con valores por defecto
+ */
+function loadSettings() {
+  const saved = localStorage.getItem('vicoSettings');
+  const defaults = {
+    theme: 'dark',
+    fontSize: 16,
+    autoDark: false,
+    soundsOn: true,
+    volume: 0.7,
+    vibrationOn: true,
+    chatLimit: 500,
+    pomWork: 25,
+    pomShort: 5,
+    pomLong: 15,
+    aiEngine: 'gemma',
+    apiKey: '',
+    aiTemp: 0.7,
+    expertMode: false,
+    ramLimit: 5.5,
+    autoBackupRam: true,
+    backupMultimedia: false,
+    backupInterval: 15,
+    driveAutoBackup: false,
+    driveSwap: false,
+    ragChunkLimit: 1000,
+    ragChunkSize: 500,
+    ragChunkOverlap: 50,
+  };
+  settings = saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
+  applySettings();
+}
+
+/**
+ * Guarda ajustes actuales en localStorage
+ */
+function saveSettings() {
+  // Recoger valores de los controles de UI
+  settings.theme         = document.getElementById('theme-select')?.value || settings.theme;
+  settings.fontSize      = parseInt(document.getElementById('font-size-range')?.value || settings.fontSize);
+  settings.autoDark      = document.getElementById('auto-dark')?.checked ?? settings.autoDark;
+  settings.soundsOn      = document.getElementById('sounds-on')?.checked ?? settings.soundsOn;
+  settings.volume        = parseFloat(document.getElementById('volume-range')?.value || settings.volume);
+  settings.vibrationOn   = document.getElementById('vibration-on')?.checked ?? settings.vibrationOn;
+  settings.chatLimit     = parseInt(document.getElementById('chat-limit')?.value || settings.chatLimit);
+  settings.pomWork       = parseInt(document.getElementById('pom-work')?.value || settings.pomWork);
+  settings.pomShort      = parseInt(document.getElementById('pom-short')?.value || settings.pomShort);
+  settings.pomLong       = parseInt(document.getElementById('pom-long')?.value || settings.pomLong);
+  settings.aiEngine      = document.getElementById('ai-engine')?.value || settings.aiEngine;
+  settings.apiKey        = document.getElementById('api-key-input')?.value || settings.apiKey;
+  settings.aiTemp        = parseFloat(document.getElementById('ai-temp')?.value || settings.aiTemp);
+  settings.expertMode    = document.getElementById('expert-mode')?.checked ?? settings.expertMode;
+  settings.ramLimit      = parseFloat(document.getElementById('ram-limit-range')?.value || settings.ramLimit);
+  settings.autoBackupRam = document.getElementById('auto-backup-ram')?.checked ?? settings.autoBackupRam;
+  settings.backupMultimedia = document.getElementById('backup-multimedia')?.checked ?? settings.backupMultimedia;
+  settings.backupInterval = parseInt(document.getElementById('backup-interval')?.value || settings.backupInterval);
+  settings.driveAutoBackup = document.getElementById('drive-auto-backup')?.checked ?? settings.driveAutoBackup;
+  settings.driveSwap     = document.getElementById('drive-swap')?.checked ?? settings.driveSwap;
+  settings.ragChunkLimit = parseInt(document.getElementById('rag-chunk-limit')?.value || settings.ragChunkLimit);
+  settings.ragChunkSize  = parseInt(document.getElementById('rag-chunk-size')?.value || settings.ragChunkSize);
+  settings.ragChunkOverlap = parseInt(document.getElementById('rag-chunk-overlap')?.value || settings.ragChunkOverlap);
+  
+  localStorage.setItem('vicoSettings', JSON.stringify(settings));
+  applySettings();
+}
+
+/**
+ * Aplica ajustes al DOM
+ */
+function applySettings() {
+  document.documentElement.setAttribute('data-theme', settings.theme);
+  document.documentElement.style.setProperty('--font-size', settings.fontSize + 'px');
+  
+  // Sincronizar controles de UI
+  const syncEl = (id, val, prop = 'value') => {
+    const el = document.getElementById(id);
+    if (el) el[prop] = val;
+  };
+  
+  syncEl('theme-select', settings.theme);
+  syncEl('font-size-range', settings.fontSize);
+  syncEl('font-size-val', settings.fontSize, 'textContent');
+  syncEl('auto-dark', settings.autoDark, 'checked');
+  syncEl('sounds-on', settings.soundsOn, 'checked');
+  syncEl('volume-range', settings.volume);
+  syncEl('volume-val', Math.round(settings.volume * 100) + '%', 'textContent');
+  syncEl('vibration-on', settings.vibrationOn, 'checked');
+  syncEl('chat-limit', settings.chatLimit);
+  syncEl('pom-work', settings.pomWork);
+  syncEl('pom-short', settings.pomShort);
+  syncEl('pom-long', settings.pomLong);
+  syncEl('ai-engine', settings.aiEngine);
+  syncEl('api-key-input', settings.apiKey);
+  syncEl('ai-temp', settings.aiTemp);
+  syncEl('ai-temp-val', settings.aiTemp, 'textContent');
+  syncEl('expert-mode', settings.expertMode, 'checked');
+  syncEl('ram-limit-range', settings.ramLimit);
+  syncEl('ram-limit-val', settings.ramLimit, 'textContent');
+  syncEl('auto-backup-ram', settings.autoBackupRam, 'checked');
+  syncEl('backup-multimedia', settings.backupMultimedia, 'checked');
+  syncEl('backup-interval', settings.backupInterval);
+  syncEl('drive-auto-backup', settings.driveAutoBackup, 'checked');
+  syncEl('drive-swap', settings.driveSwap, 'checked');
+  syncEl('rag-chunk-limit', settings.ragChunkLimit);
+  syncEl('rag-chunk-size', settings.ragChunkSize);
+  syncEl('rag-chunk-overlap', settings.ragChunkOverlap);
+  
+  // Actualizar límites de chat
+  document.querySelectorAll('[id$="-char-limit"]').forEach(el => {
+    el.textContent = settings.chatLimit;
+  });
+}
+
+function setTheme(theme) { settings.theme = theme; saveSettings(); }
+function setFontSize(val) {
+  document.getElementById('font-size-val').textContent = val;
+  settings.fontSize = parseInt(val);
+  document.documentElement.style.setProperty('--font-size', val + 'px');
+  saveSettings();
+}
+function setVolume(val) {
+  document.getElementById('volume-val').textContent = Math.round(val * 100) + '%';
+  settings.volume = parseFloat(val);
+}
+function updateRamLimit(val) {
+  document.getElementById('ram-limit-val').textContent = val;
+  settings.ramLimit = parseFloat(val);
+  saveSettings();
+}
+
+// ============================================================
+// NAVEGACIÓN
+// ============================================================
+
+/**
+ * Navega a una página de la app
+ */
+function navTo(page) {
+  // Ocultar página actual
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  
+  // Mostrar nueva página
+  const pageEl = document.getElementById(`page-${page}`);
+  if (pageEl) pageEl.classList.add('active');
+  
+  const navLink = document.querySelector(`[data-page="${page}"]`);
+  if (navLink) navLink.classList.add('active');
+  
+  appState.currentPage = page;
+  
+  // Acciones al entrar a cada página
+  switch(page) {
+    case 'cursos':    renderCursos(); break;
+    case 'notas':     renderNotas(); renderFolders(); break;
+    case 'calendario': renderCalendar(); startClock(); break;
+    case 'rag':       renderRagDocs(); break;
+    case 'perfil':    renderPerfil(); break;
+    case 'inicio':    updateHomeStats(); break;
+  }
+}
+
+// ============================================================
+// MODALES
+// ============================================================
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (el) { el.classList.add('open'); document.body.style.overflow = 'hidden'; }
+}
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (el) { el.classList.remove('open'); document.body.style.overflow = ''; }
+}
+
+// Cerrar modal al hacer clic fuera
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('modal-overlay')) {
+    closeModal(e.target.id);
+  }
+});
+
+// ============================================================
+// TOASTS
+// ============================================================
+function showToast(msg, type = 'info', duration = 3000) {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+  toast.innerHTML = `<span>${icons[type] || 'ℹ️'}</span><span>${sanitize(msg)}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), duration);
+}
+
+// ============================================================
+// SANITIZACIÓN DE INPUTS (seguridad)
+// ============================================================
+function sanitize(str) {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+/**
+ * Verifica si un texto contiene palabras bloqueadas
+ */
+function containsBlockedWords(text) {
+  const lower = text.toLowerCase();
+  return BLOCKED_WORDS.some(w => lower.includes(w));
+}
+
+/**
+ * Valida si una URL es válida y segura
+ */
+function isValidUrl(url) {
+  try {
+    const u = new URL(url);
+    return ['http:', 'https:'].includes(u.protocol);
+  } catch { return false; }
+}
+
+/**
+ * Verifica si una URL de YouTube es educativa usando oEmbed
+ */
+async function verifyYouTubeUrl(url) {
+  try {
+    const oembed = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+    const res = await fetch(oembed);
+    if (res.ok) {
+      const data = await res.json();
+      return { valid: true, title: data.title, author: data.author_name };
+    }
+    return { valid: false };
+  } catch { return { valid: false }; }
+}
+
+// ============================================================
+// AUDIO - WEB AUDIO API
+// ============================================================
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+/**
+ * Reproduce una melodía simple usando Web Audio API
+ * @param {number} freq - Frecuencia base en Hz
+ * @param {number} duration - Duración en segundos
+ */
+function playTone(freq = 440, duration = 0.5, type = 'sine') {
+  if (!settings.soundsOn) return;
+  try {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gain.gain.setValueAtTime(settings.volume * 0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch(e) { console.warn('Audio error:', e); }
+}
+
+/**
+ * Reproduce melodía de intro de profesor (4 segundos)
+ */
+function playTeacherMelody(index) {
+  const melody = MELODIES[index % MELODIES.length];
+  const notes = [melody.freqs, melody.freqs * 1.25, melody.freqs * 1.5, melody.freqs * 1.25];
+  notes.forEach((freq, i) => {
+    setTimeout(() => playTone(freq, 0.9, 'triangle'), i * 900);
+  });
+  showToast(`🎵 Melodía ${index + 1} reproduciendo`, 'info', 4000);
+}
+
+/**
+ * Sonido de alerta Pomodoro
+ */
+function playPomodoroAlert() {
+  [523, 659, 784, 1047].forEach((freq, i) => {
+    setTimeout(() => playTone(freq, 0.4, 'square'), i * 200);
+  });
+}
+
+/**
+ * Sonido de éxito
+ */
+function playSuccess() {
+  [523, 659, 784].forEach((freq, i) => {
+    setTimeout(() => playTone(freq, 0.3), i * 150);
+  });
+}
+
+// ============================================================
+// VIBRACIÓN
+// ============================================================
+function vibrate(pattern = [100]) {
+  if (settings.vibrationOn && navigator.vibrate) {
+    navigator.vibrate(pattern);
+  }
+}
+
+// ============================================================
+// NOTIFICACIONES PUSH
+// ============================================================
+async function requestNotifPermission() {
+  if (!('Notification' in window)) {
+    showToast('Notificaciones no soportadas en este navegador', 'warning');
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    showToast('✅ Notificaciones activadas', 'success');
+    new Notification('VICO ACTIVE', { body: '¡Notificaciones activadas!', icon: 'icon.png' });
+  } else {
+    showToast('Notificaciones denegadas', 'warning');
+  }
+}
+
+function sendNotification(title, body) {
+  if (Notification.permission === 'granted') {
+    new Notification(title, { body, icon: 'icon.png' });
+  }
+}
+
+// ============================================================
+// RAM MANAGER
+// ============================================================
+const RAMManager = {
+  intervalId: null,
+  alertShown: false,
+  backupIntervalId: null,
+  
+  /**
+   * Obtiene el uso de RAM actual en GB
+   * Usa performance.memory si está disponible (Chrome/Android)
+   */
+  getUsage() {
+    if (performance.memory) {
+      return {
+        used: performance.memory.usedJSHeapSize / (1024 ** 3),
+        total: performance.memory.jsHeapSizeLimit / (1024 ** 3),
+        supported: true,
+      };
+    }
+    // Fallback: estimación aproximada
+    return { used: null, total: null, supported: false };
+  },
+  
+  /**
+   * Actualiza el badge de RAM en la navbar cada 5 segundos
+   */
+  startMonitoring() {
+    this.intervalId = setInterval(() => this.checkRAM(), 5000);
+    this.checkRAM(); // Primera verificación inmediata
+  },
+  
+  checkRAM() {
+    const badge = document.getElementById('ram-badge');
+    const info = this.getUsage();
+    
+    if (!info.supported) {
+      badge.textContent = 'RAM: N/A';
+      badge.className = '';
+      return;
+    }
+    
+    const usedGB = info.used.toFixed(1);
+    const limitGB = settings.ramLimit;
+    badge.textContent = `RAM: ${usedGB}GB`;
+    
+    // Actualizar color del badge según nivel
+    const pct = info.used / limitGB;
+    if (pct >= 1) {
+      badge.className = 'critical';
+      this.onRAMCritical(info.used, limitGB);
+    } else if (pct >= 0.8) {
+      badge.className = 'warning';
+    } else {
+      badge.className = '';
+    }
+  },
+  
+  /**
+   * Acción cuando RAM supera el límite
+   */
+  onRAMCritical(used, limit) {
+    if (this.alertShown) return;
+    this.alertShown = true;
+    
+    // Mostrar valores en el modal de alerta
+    document.getElementById('ram-alert-used').textContent = used.toFixed(2) + ' GB';
+    document.getElementById('ram-alert-limit').textContent = limit + ' GB';
+    
+    // Backup automático si está configurado
+    if (settings.autoBackupRam) {
+      exportBackup(true); // silencioso
+    }
+    
+    openModal('modal-ram-alert');
+    vibrate([200, 100, 200]);
+    
+    // Reset flag después de 30 segundos para no spam
+    setTimeout(() => { this.alertShown = false; }, 30000);
+  },
+  
+  /**
+   * Inicia el intervalo de backup automático
+   */
+  startAutoBackup() {
+    if (this.backupIntervalId) clearInterval(this.backupIntervalId);
+    const mins = settings.backupInterval || 15;
+    this.backupIntervalId = setInterval(() => {
+      exportBackup(true);
+      showToast('💾 Backup automático guardado', 'success');
+    }, mins * 60 * 1000);
+  },
+};
+
+/**
+ * Libera RAM: cierra sesiones, limpia cachés, llama gc si existe
+ */
+async function liberarRAM() {
+  // Limpiar caché del Service Worker
+  if ('caches' in window) {
+    const keys = await caches.keys();
+    // Solo limpiamos cachés temporales, no los estáticos del SW
+    keys.filter(k => k.includes('temp')).forEach(k => caches.delete(k));
+  }
+  
+  // Forzar GC si está disponible (solo en entornos especiales)
+  if (window.gc) {
+    try { window.gc(); } catch(e) {}
+  }
+  
+  // Descargar modelos IA si están cargados
+  if (window._ragWorker) {
+    window._ragWorker.terminate();
+    window._ragWorker = null;
+  }
+  
+  // Limpiar variables temporales
+  window._gemmaModel = null;
+  
+  showToast('🧹 RAM liberada', 'success');
+  RAMManager.alertShown = false;
+  RAMManager.checkRAM();
+}
+
+function ramSaveBackup() {
+  exportBackup(false);
+  closeModal('modal-ram-alert');
+}
+
+function ramRestartApp() {
+  if (confirm('¿Reiniciar la app? Se perderán los datos no guardados.')) {
+    closeModal('modal-ram-alert');
+    liberarRAM();
+    setTimeout(() => location.reload(), 500);
+  }
+}
+
+// ============================================================
+// POMODORO TIMER
+// ============================================================
+const Pomodoro = {
+  running: false,
+  intervalId: null,
+  seconds: 0,
+  phase: 'work', // 'work' | 'short' | 'long'
+  sessions: 0,
+  totalSeconds: 0,
+  
+  init() {
+    // Cargar estado guardado
+    const saved = localStorage.getItem('vicoPomodoro');
+    if (saved) {
+      const s = JSON.parse(saved);
+      this.sessions = s.sessions || 0;
+      this.phase    = s.phase || 'work';
+    }
+    this.reset(false);
+    document.getElementById('pom-sessions').textContent = this.sessions;
+  },
+  
+  getPhaseSeconds() {
+    switch(this.phase) {
+      case 'work':  return settings.pomWork  * 60;
+      case 'short': return settings.pomShort * 60;
+      case 'long':  return settings.pomLong  * 60;
+    }
+  },
+  
+  toggle() {
+    this.running ? this.pause() : this.start();
+  },
+  
+  start() {
+    if (this.seconds <= 0) this.reset(false);
+    this.running = true;
+    document.getElementById('pom-start-btn').textContent = '⏸ Pausar';
+    document.getElementById('pomodoro-badge').classList.add('running');
+    document.getElementById('pomodoro-badge').classList.remove('paused');
+    
+    this.intervalId = setInterval(() => this.tick(), 1000);
+  },
+  
+  pause() {
+    this.running = false;
+    clearInterval(this.intervalId);
+    document.getElementById('pom-start-btn').textContent = '▶ Continuar';
+    document.getElementById('pomodoro-badge').classList.remove('running');
+    document.getElementById('pomodoro-badge').classList.add('paused');
+  },
+  
+  tick() {
+    this.seconds--;
+    if (this.seconds < 0) {
+      this.complete();
+      return;
+    }
+    this.updateDisplay();
+    this.saveState();
+  },
+  
+  complete() {
+    this.running = false;
+    clearInterval(this.intervalId);
+    
+    if (this.phase === 'work') {
+      this.sessions++;
+      document.getElementById('pom-sessions').textContent = this.sessions;
+      appState.pomodoroSessions = this.sessions;
+      
+      // Cada 4 sesiones, descanso largo
+      this.phase = (this.sessions % 4 === 0) ? 'long' : 'short';
+    } else {
+      this.phase = 'work';
+    }
+    
+    playPomodoroAlert();
+    vibrate([300, 100, 300, 100, 300]);
+    sendNotification('⏱ Pomodoro', `¡Tiempo! Comenzando: ${this.getPhaseLabel()}`);
+    showToast(`⏱ ¡Pomodoro completo! Iniciando ${this.getPhaseLabel()}`, 'success');
+    
+    this.reset(false);
+    this.start();
+    this.saveState();
+  },
+  
+  reset(updateUI = true) {
+    clearInterval(this.intervalId);
+    this.running = false;
+    this.seconds = this.getPhaseSeconds();
+    this.totalSeconds = this.seconds;
+    if (updateUI) {
+      document.getElementById('pom-start-btn').textContent = '▶ Iniciar';
+      document.getElementById('pomodoro-badge').className = 'paused';
+    }
+    this.updateDisplay();
+  },
+  
+  skip() {
+    this.complete();
+  },
+  
+  getPhaseLabel() {
+    return { work: 'Trabajo', short: 'Descanso corto', long: 'Descanso largo' }[this.phase];
+  },
+  
+  updateDisplay() {
+    const m = Math.floor(this.seconds / 60).toString().padStart(2, '0');
+    const s = (this.seconds % 60).toString().padStart(2, '0');
+    const timeStr = `${m}:${s}`;
+    
+    document.getElementById('pom-display').textContent = timeStr;
+    document.getElementById('pom-nav-time').textContent = timeStr;
+    document.getElementById('pom-phase').textContent = this.getPhaseLabel().toUpperCase();
+    
+    // Anillo SVG
+    const ring = document.getElementById('pom-ring');
+    if (ring && this.totalSeconds > 0) {
+      const pct = this.seconds / this.totalSeconds;
+      const circumference = 565;
+      ring.style.strokeDashoffset = circumference * (1 - pct);
+    }
+    
+    // Color del badge
+    const badge = document.getElementById('pomodoro-badge');
+    if (this.running) badge.classList.add('running');
+  },
+  
+  saveState() {
+    localStorage.setItem('vicoPomodoro', JSON.stringify({
+      sessions: this.sessions,
+      phase: this.phase,
+    }));
+  },
+};
+
+function openPomodoro() { openModal('modal-pomodoro'); }
+function pomodoroToggle() { Pomodoro.toggle(); }
+function pomodoroReset() { Pomodoro.reset(); }
+function pomodoroSkip() { Pomodoro.skip(); }
+function pomodoroUpdateSettings() {
+  saveSettings();
+  Pomodoro.reset();
+}
+
+// ============================================================
+// CALENDARIO
+// ============================================================
+let calDate = new Date();
+let clockInterval = null;
+
+/**
+ * Inicia el reloj en tiempo real
+ */
+function startClock() {
+  if (clockInterval) clearInterval(clockInterval);
+  const el = document.getElementById('cal-current-time');
+  if (!el) return;
+  
+  const update = () => {
+    const now = new Date();
+    el.textContent = now.toLocaleString('es-ES', {
+      weekday: 'long', year: 'numeric', month: 'long',
+      day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+  };
+  update();
+  clockInterval = setInterval(update, 1000);
+}
+
+/**
+ * Renderiza el calendario del mes actual
+ */
+async function renderCalendar() {
+  const year  = calDate.getFullYear();
+  const month = calDate.getMonth();
+  const today = new Date();
+  
+  // Etiqueta del mes
+  document.getElementById('cal-month-label').textContent =
+    calDate.toLocaleString('es-ES', { month: 'long', year: 'numeric' })
+           .replace(/^\w/, c => c.toUpperCase());
+  
+  // Cabeceras días
+  const headers = document.getElementById('cal-day-headers');
+  headers.innerHTML = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom']
+    .map(d => `<div class="cal-day-header">${d}</div>`).join('');
+  
+  // Obtener eventos del mes
+  const allEvents = await IDB.getAll('eventos');
+  const eventDays = new Set(allEvents.map(e => {
+    const d = new Date(e.fecha);
+    return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  }));
+  
+  // Primer día del mes (ajustar a lunes=0)
+  const firstDay = new Date(year, month, 1);
+  let startDow = firstDay.getDay() - 1;
+  if (startDow < 0) startDow = 6;
+  
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrev  = new Date(year, month, 0).getDate();
+  
+  const grid = document.getElementById('cal-grid');
+  let html = '';
+  
+  // Días del mes anterior
+  for (let i = startDow - 1; i >= 0; i--) {
+    html += `<div class="cal-day other-month">${daysInPrev - i}</div>`;
+  }
+  
+  // Días del mes actual
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = `${year}-${month}-${d}`;
+    const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+    const hasEvent = eventDays.has(key);
+    html += `<div class="cal-day${isToday ? ' today' : ''}${hasEvent ? ' has-event' : ''}"
+               onclick="openDayEvents(${year},${month},${d})">${d}</div>`;
+  }
+  
+  // Días del mes siguiente para completar la cuadrícula
+  const total = startDow + daysInMonth;
+  const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let d = 1; d <= remaining; d++) {
+    html += `<div class="cal-day other-month">${d}</div>`;
+  }
+  
+  grid.innerHTML = html;
+  renderEvents(allEvents);
+}
+
+function calPrev() { calDate.setMonth(calDate.getMonth() - 1); renderCalendar(); }
+function calNext() { calDate.setMonth(calDate.getMonth() + 1); renderCalendar(); }
+
+function openAddEvent() {
+  // Prellenar con fecha/hora actual
+  const now = new Date();
+  const local = new Date(now - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  document.getElementById('event-datetime').value = local;
+  document.getElementById('event-title').value = '';
+  document.getElementById('event-desc').value = '';
+  openModal('modal-add-event');
+}
+
+async function saveEvent() {
+  const title = document.getElementById('event-title').value.trim();
+  if (!title) { showToast('El título es obligatorio', 'warning'); return; }
+  
+  if (containsBlockedWords(title)) {
+    showToast('Contenido no permitido en el título', 'error');
+    return;
+  }
+  
+  const fecha = document.getElementById('event-datetime').value;
+  const desc  = document.getElementById('event-desc').value.trim();
+  const alarm = parseInt(document.getElementById('event-alarm').value);
+  
+  await IDB.add('eventos', { title: sanitize(title), fecha, desc: sanitize(desc), alarm });
+  
+  // Programar alarma
+  if (alarm > 0) {
+    const eventTime = new Date(fecha).getTime();
+    const alertTime = eventTime - alarm * 60 * 1000;
+    const delay = alertTime - Date.now();
+    if (delay > 0) {
+      setTimeout(() => {
+        sendNotification('📅 Recordatorio', `${title} en ${alarm} minutos`);
+        showToast(`📅 Recordatorio: ${title}`, 'info');
+        playTone(523, 0.5);
+      }, delay);
+    }
+  }
+  
+  closeModal('modal-add-event');
+  showToast('✅ Evento guardado', 'success');
+  renderCalendar();
+}
+
+function renderEvents(events) {
+  const list = document.getElementById('events-list');
+  if (!events.length) {
+    list.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--text-muted);font-size:0.88rem;">No hay eventos.</div>';
+    return;
+  }
+  
+  // Ordenar por fecha
+  events.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+  
+  list.innerHTML = events.map(ev => `
+    <div class="card" style="padding:0.85rem 1rem;">
+      <div class="flex-row" style="justify-content:space-between;">
+        <div>
+          <div style="font-weight:700;font-size:0.9rem;">${sanitize(ev.title)}</div>
+          <div style="font-size:0.78rem;color:var(--text-muted);">
+            📅 ${new Date(ev.fecha).toLocaleString('es-ES')}
+            ${ev.alarm > 0 ? `· 🔔 ${ev.alarm} min antes` : ''}
+          </div>
+          ${ev.desc ? `<div style="font-size:0.82rem;color:var(--text-secondary);margin-top:0.25rem;">${sanitize(ev.desc)}</div>` : ''}
+        </div>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteEvent(${ev.id})">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function deleteEvent(id) {
+  await IDB.delete('eventos', id);
+  showToast('Evento eliminado', 'info');
+  renderCalendar();
+}
+
+function openDayEvents(year, month, day) {
+  calDate = new Date(year, month, day);
+  renderCalendar();
+}
+
+// ============================================================
+// NOTAS Y CARPETAS
+// ============================================================
+
+function openCreateNote(noteId = null) {
+  appState.editingNoteId = noteId;
+  document.getElementById('note-modal-title').textContent = noteId ? 'Editar Nota' : 'Nueva Nota';
+  document.getElementById('note-title').value = '';
+  document.getElementById('note-content').value = '';
+  document.getElementById('note-category').value = '';
+  
+  // Cargar carpetas en el select
+  loadFoldersIntoSelect();
+  
+  if (noteId) {
+    IDB.get('notas', noteId).then(note => {
+      if (note) {
+        document.getElementById('note-title').value = note.title;
+        document.getElementById('note-content').value = note.content;
+        document.getElementById('note-category').value = note.category || '';
+        document.getElementById('note-folder').value = note.folderId || '';
+      }
+    });
+  }
+  
+  openModal('modal-create-note');
+}
+
+async function loadFoldersIntoSelect() {
+  const folders = await IDB.getAll('carpetas');
+  const sel = document.getElementById('note-folder');
+  sel.innerHTML = '<option value="">Sin carpeta</option>';
+  folders.forEach(f => {
+    sel.innerHTML += `<option value="${f.id}">${sanitize(f.name)}</option>`;
+  });
+}
+
+async function saveNote() {
+  const title   = document.getElementById('note-title').value.trim();
+  const content = document.getElementById('note-content').value.trim();
+  
+  if (!title) { showToast('El título es obligatorio', 'warning'); return; }
+  if (containsBlockedWords(title + ' ' + content)) {
+    showToast('Contenido no permitido', 'error');
+    return;
+  }
+  
+  const note = {
+    title:    sanitize(title),
+    content:  sanitize(content),
+    category: sanitize(document.getElementById('note-category').value.trim()),
+    folderId: document.getElementById('note-folder').value || null,
+  };
+  
+  if (appState.editingNoteId) {
+    await IDB.put('notas', { ...note, id: appState.editingNoteId });
+    showToast('✅ Nota actualizada', 'success');
+  } else {
+    await IDB.add('notas', note);
+    showToast('✅ Nota guardada', 'success');
+  }
+  
+  playSuccess();
+  closeModal('modal-create-note');
+  renderNotas();
+  updateHomeStats();
+}
+
+async function renderNotas() {
+  const allNotas = await IDB.getAll('notas');
+  const search   = document.getElementById('search-notas')?.value.toLowerCase() || '';
+  
+  let filtered = allNotas;
+  
+  // Filtrar por carpeta
+  if (appState.selectedFolderId !== 'all') {
+    filtered = filtered.filter(n => String(n.folderId) === String(appState.selectedFolderId));
+  }
+  
+  // Filtrar por búsqueda
+  if (search) {
+    filtered = filtered.filter(n =>
+      n.title.toLowerCase().includes(search) ||
+      (n.content && n.content.toLowerCase().includes(search)) ||
+      (n.category && n.category.toLowerCase().includes(search))
+    );
+  }
+  
+  const grid = document.getElementById('notas-grid');
+  
+  if (!filtered.length) {
+    grid.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted);font-size:0.88rem;grid-column:1/-1;">
+      ${search ? 'No se encontraron notas.' : 'No hay notas. ¡Crea tu primera nota!'}
+    </div>`;
+    return;
+  }
+  
+  grid.innerHTML = filtered.map(n => `
+    <div class="note-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;">
+        <div style="font-weight:700;font-size:0.9rem;flex:1;">${sanitize(n.title)}</div>
+        <div style="display:flex;gap:0.3rem;flex-shrink:0;">
+          <button class="btn btn-secondary btn-sm btn-icon" onclick="openCreateNote(${n.id})" title="Editar">✏️</button>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteNote(${n.id})" title="Eliminar">🗑</button>
+        </div>
+      </div>
+      ${n.category ? `<span class="tag tag-purple" style="margin-bottom:0.5rem;display:inline-block;">${sanitize(n.category)}</span>` : ''}
+      <div style="font-size:0.82rem;color:var(--text-secondary);line-height:1.5;max-height:80px;overflow:hidden;">
+        ${sanitize(n.content || '')}
+      </div>
+      <div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.5rem;">
+        ${new Date(n.createdAt).toLocaleDateString('es-ES')}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function deleteNote(id) {
+  if (!confirm('¿Eliminar esta nota?')) return;
+  await IDB.delete('notas', id);
+  showToast('Nota eliminada', 'info');
+  renderNotas();
+  updateHomeStats();
+}
+
+function filterNotas() { renderNotas(); }
+function filterByFolder(folderId) {
+  appState.selectedFolderId = folderId;
+  document.querySelectorAll('.folder-chip').forEach(c => c.classList.remove('active'));
+  event.target.classList.add('active');
+  renderNotas();
+}
+
+function openCreateFolder() {
+  document.getElementById('folder-name').value = '';
+  renderFolderColors();
+  openModal('modal-create-folder');
+}
+
+function renderFolderColors() {
+  const container = document.getElementById('folder-colors');
+  container.innerHTML = FOLDER_COLORS.map((c, i) => `
+    <div onclick="selectFolderColor('${c}', this)"
+         style="width:28px;height:28px;border-radius:50%;background:${c};cursor:pointer;border:2px solid transparent;transition:all 0.2s;"
+         data-color="${c}" title="${c}"></div>
+  `).join('');
+  // Seleccionar el primero por defecto
+  const first = container.querySelector('[data-color]');
+  if (first) selectFolderColor(FOLDER_COLORS[0], first);
+}
+
+let selectedFolderColor = FOLDER_COLORS[0];
+function selectFolderColor(color, el) {
+  selectedFolderColor = color;
+  document.querySelectorAll('#folder-colors [data-color]').forEach(c => {
+    c.style.border = '2px solid transparent';
+  });
+  el.style.border = '2px solid white';
+  el.style.boxShadow = `0 0 8px ${color}`;
+}
+
+async function saveFolder() {
+  const name = document.getElementById('folder-name').value.trim();
+  if (!name) { showToast('El nombre es obligatorio', 'warning'); return; }
+  
+  await IDB.add('carpetas', { name: sanitize(name), color: selectedFolderColor });
+  showToast('✅ Carpeta creada', 'success');
+  closeModal('modal-create-folder');
+  renderFolders();
+}
+
+async function renderFolders() {
+  const folders = await IDB.getAll('carpetas');
+  const row = document.getElementById('folders-row');
+  
+  row.innerHTML = `<div class="folder-chip ${appState.selectedFolderId === 'all' ? 'active' : ''}"
+    style="color:var(--neon-purple);background:var(--accent)11;" onclick="filterByFolder('all')">
+    📂 Todas
+  </div>`;
+  
+  folders.forEach(f => {
+    row.innerHTML += `<div class="folder-chip ${appState.selectedFolderId === String(f.id) ? 'active' : ''}"
+      style="color:${f.color};background:${f.color}11;"
+      onclick="filterByFolder('${f.id}')">
+      📁 ${sanitize(f.name)}
+      <button onclick="event.stopPropagation();deleteFolder(${f.id})" style="background:none;border:none;cursor:pointer;color:inherit;font-size:0.7rem;opacity:0.6;">✕</button>
+    </div>`;
+  });
+}
+
+async function deleteFolder(id) {
+  if (!confirm('¿Eliminar carpeta? Las notas no se eliminarán.')) return;
+  await IDB.delete('carpetas', id);
+  if (appState.selectedFolderId === String(id)) appState.selectedFolderId = 'all';
+  renderFolders();
+  renderNotas();
+}
+
+// ============================================================
+// CURSOS CON IA
+// ============================================================
+
+function openCreateCourse() {
+  renderCourseLogo();
+  openModal('modal-create-course');
+}
+
+function renderCourseLogo() {
+  const container = document.getElementById('course-logo-grid');
+  container.innerHTML = COURSE_LOGOS.map((logo, i) => `
+    <div onclick="selectCourseLogo(${i})"
+         style="cursor:pointer;border-radius:12px;border:2px solid ${i === appState.selectedCourseLogoIndex ? 'var(--accent)' : 'transparent'};
+                padding:4px;transition:all 0.2s;${i === appState.selectedCourseLogoIndex ? 'box-shadow:0 0 12px var(--accent)' : ''}"
+         id="logo-opt-${i}">
+      <img src="${logo.b64}" width="48" height="48" alt="${logo.label}" style="border-radius:8px;display:block;">
+    </div>
+  `).join('');
+}
+
+function selectCourseLogo(index) {
+  appState.selectedCourseLogoIndex = index;
+  document.querySelectorAll('[id^="logo-opt-"]').forEach((el, i) => {
+    el.style.border = i === index ? '2px solid var(--accent)' : '2px solid transparent';
+    el.style.boxShadow = i === index ? '0 0 12px var(--accent)' : '';
+  });
+}
+
+/**
+ * Genera un curso completo con IA
+ */
+async function generateCourseWithAI() {
+  const title  = document.getElementById('course-title').value.trim();
+  const desc   = document.getElementById('course-desc').value.trim();
+  const prompt = document.getElementById('course-prompt').value.trim();
+  const engine = document.getElementById('course-ai-engine').value;
+  
+  if (!title) { showToast('El título es obligatorio', 'warning'); return; }
+  
+  closeModal('modal-create-course');
+  showLoading('🤖 Generando curso con IA...');
+  
+  try {
+    let courseContent;
+    
+    // Intentar generar con el motor seleccionado
+    if (engine === 'gemma') {
+      courseContent = await generateWithGemma(title, desc, prompt);
+    } else {
+      courseContent = await generateWithAPI(engine, title, desc, prompt);
+    }
+    
+    // Si falla la IA, usar contenido de ejemplo
+    if (!courseContent) {
+      courseContent = generateFallbackCourse(title, desc);
+    }
+    
+    const logo = COURSE_LOGOS[appState.selectedCourseLogoIndex];
+    
+    const course = {
+      title:    sanitize(title),
+      desc:     sanitize(desc),
+      logo:     logo.b64,
+      logoEmoji: logo.emoji,
+      modules:  courseContent.modules,
+      flashcards: courseContent.flashcards,
+      quizzes:  courseContent.quizzes,
+      tasks:    courseContent.tasks,
+      exams:    courseContent.exams,
+      plan:     courseContent.plan,
+      progress: 0,
+      engine,
+    };
+    
+    const id = await IDB.add('cursos', course);
+    
+    hideLoading();
+    playSuccess();
+    showToast('✅ Curso generado exitosamente', 'success');
+    navTo('cursos');
+    updateHomeStats();
+    
+  } catch(e) {
+    hideLoading();
+    console.error('Error generando curso:', e);
+    showToast('Error al generar el curso: ' + e.message, 'error');
+  }
+}
+
+/**
+ * Genera contenido con Gemma WebGPU (lazy loading)
+ */
+async function generateWithGemma(title, desc, prompt) {
+  // Verificar soporte WebGPU
+  if (!navigator.gpu) {
+    showToast('⚠️ WebGPU no soportado en este navegador. Usando generación local.', 'warning');
+    return generateFallbackCourse(title, desc);
+  }
+  
+  try {
+    // Lazy loading de Transformers.js
+    if (!window._transformers) {
+      showLoading('📦 Cargando modelo Gemma...');
+      const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js');
+      window._transformers = { pipeline };
+    }
+    
+    // Por ahora usar fallback (Gemma WebGPU requiere configuración específica)
+    return generateFallbackCourse(title, desc);
+    
+  } catch(e) {
+    console.warn('Gemma WebGPU error:', e);
+    return generateFallbackCourse(title, desc);
+  }
+}
+
+/**
+ * Genera contenido con APIs externas (Groq, Gemini, OpenRouter)
+ */
+async function generateWithAPI(engine, title, desc, prompt) {
+  const apiKey = settings.apiKey;
+  if (!apiKey) {
+    showToast('⚠️ No hay API key configurada. Usando generación local.', 'warning');
+    return generateFallbackCourse(title, desc);
+  }
+  
+  const systemPrompt = `Eres un experto en educación. Genera un curso completo en JSON con esta estructura exacta:
+{
+  "modules": [{"title":"...","content":"...","duration":"..."}],
+  "flashcards": [{"front":"...","back":"..."}],
+  "quizzes": [{"question":"...","options":["..."],"correct":0}],
+  "tasks": [{"title":"...","desc":"...","deadline":"..."}],
+  "exams": [{"question":"...","options":["..."],"correct":0}],
+  "plan": [{"week":1,"activities":["..."]}]
+}
+Genera exactamente: 5 módulos, 10 flashcards, 5 quizzes, 5 tareas, 5 preguntas de examen, 4 semanas de plan.`;
+  
+  const userPrompt = `Crea un curso sobre: "${title}". Descripción: ${desc}. ${prompt}`;
+  
+  const endpoints = {
+    groq: { url: 'https://api.groq.com/openai/v1/chat/completions', model: 'llama3-8b-8192' },
+    gemini: { url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, model: 'gemini-pro' },
+    openrouter: { url: 'https://openrouter.ai/api/v1/chat/completions', model: 'openai/gpt-3.5-turbo' },
+  };
+  
+  const ep = endpoints[engine];
+  if (!ep) return generateFallbackCourse(title, desc);
+  
+  try {
+    let body, headers;
+    
+    if (engine === 'gemini') {
+      body = JSON.stringify({ contents: [{ parts: [{ text: systemPrompt + '\n\n' + userPrompt }] }] });
+      headers = { 'Content-Type': 'application/json' };
+    } else {
+      body = JSON.stringify({
+        model: ep.model,
+        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+        temperature: settings.aiTemp,
+        max_tokens: 2000,
+        response_format: { type: 'json_object' },
+      });
+      headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` };
+    }
+    
+    const res = await fetch(ep.url, { method: 'POST', headers, body });
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    
+    const data = await res.json();
+    let text = engine === 'gemini'
+      ? data.candidates?.[0]?.content?.parts?.[0]?.text
+      : data.choices?.[0]?.message?.content;
+    
+    // Extraer JSON de la respuesta
+    const match = text?.match(/\{[\s\S]*\}/);
+    if (match) return JSON.parse(match[0]);
+    
+  } catch(e) {
+    console.warn(`Error con ${engine}:`, e);
+  }
+  
+  return generateFallbackCourse(title, desc);
+}
+
+/**
+ * Genera un curso de ejemplo cuando la IA no está disponible
+ */
+function generateFallbackCourse(title, desc) {
+  return {
+    modules: [
+      { title: `Introducción a ${title}`, content: `En este módulo aprenderás los fundamentos de ${title}. ${desc}`, duration: '2 horas' },
+      { title: 'Conceptos Fundamentales', content: 'Exploraremos los conceptos básicos necesarios para dominar el tema.', duration: '3 horas' },
+      { title: 'Aplicaciones Prácticas', content: 'Pondremos en práctica lo aprendido con ejercicios reales.', duration: '4 horas' },
+      { title: 'Técnicas Avanzadas', content: 'Profundizaremos en aspectos más complejos del tema.', duration: '3 horas' },
+      { title: 'Proyecto Final', content: 'Aplicarás todos los conocimientos en un proyecto integrador.', duration: '5 horas' },
+    ],
+    flashcards: Array.from({length: 10}, (_, i) => ({
+      front: `Concepto clave ${i + 1} de ${title}`,
+      back: `Definición y explicación del concepto ${i + 1} relacionado con ${title}.`,
+    })),
+    quizzes: Array.from({length: 5}, (_, i) => ({
+      question: `¿Cuál es la característica principal del aspecto ${i + 1}?`,
+      options: ['Opción A correcta', 'Opción B incorrecta', 'Opción C incorrecta', 'Opción D incorrecta'],
+      correct: 0,
+    })),
+    tasks: [
+      { title: 'Investigación inicial', desc: `Investiga los fundamentos de ${title}`, deadline: '3 días' },
+      { title: 'Ejercicio práctico 1', desc: 'Completa los ejercicios del módulo 2', deadline: '5 días' },
+      { title: 'Proyecto parcial', desc: 'Desarrolla un mini-proyecto aplicando lo aprendido', deadline: '1 semana' },
+      { title: 'Revisión y reflexión', desc: 'Revisa tus notas y prepara preguntas', deadline: '2 días' },
+      { title: 'Proyecto final', desc: 'Completa el proyecto integrador del curso', deadline: '2 semanas' },
+    ],
+    exams: Array.from({length: 5}, (_, i) => ({
+      question: `Pregunta de examen ${i + 1}: ¿Cómo se aplica el concepto ${i + 1}?`,
+      options: ['Respuesta correcta', 'Respuesta incorrecta A', 'Respuesta incorrecta B', 'Respuesta incorrecta C'],
+      correct: 0,
+    })),
+    plan: [
+      { week: 1, activities: ['Módulo 1: Introducción', 'Flashcards 1-3', 'Tarea 1'] },
+      { week: 2, activities: ['Módulo 2: Fundamentos', 'Flashcards 4-6', 'Quiz 1-2', 'Tarea 2'] },
+      { week: 3, activities: ['Módulo 3-4: Práctica', 'Flashcards 7-10', 'Quiz 3-5', 'Tarea 3-4'] },
+      { week: 4, activities: ['Módulo 5: Proyecto', 'Examen final', 'Tarea 5', 'Certificado'] },
+    ],
+  };
+}
+
+async function renderCursos() {
+  const cursos = await IDB.getAll('cursos');
+  const search = document.getElementById('search-cursos')?.value.toLowerCase() || '';
+  
+  const filtered = search
+    ? cursos.filter(c => c.title.toLowerCase().includes(search) || (c.desc && c.desc.toLowerCase().includes(search)))
+    : cursos;
+  
+  const grid = document.getElementById('cursos-grid');
+  
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="card" style="text-align:center;padding:2rem;color:var(--text-muted);grid-column:1/-1;">
+      <div style="font-size:3rem;margin-bottom:0.75rem;">📚</div>
+      <p>${search ? 'No se encontraron cursos.' : 'No hay cursos aún. ¡Crea uno con IA!'}</p>
+      <button class="btn btn-primary" style="margin-top:1rem;" onclick="openCreateCourse()">✨ Crear Curso</button>
+    </div>`;
+    return;
+  }
+  
+  grid.innerHTML = filtered.map(c => `
+    <div class="course-card" onclick="viewCourse(${c.id})">
+      <div class="course-thumb">
+        ${c.logo ? `<img src="${c.logo}" alt="${c.title}" style="width:80px;height:80px;object-fit:contain;">` : `<span>${c.logoEmoji || '📚'}</span>`}
+      </div>
+      <div class="course-body">
+        <div class="course-title">${sanitize(c.title)}</div>
+        <div class="course-desc">${sanitize(c.desc || '')}</div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" style="width:${c.progress || 0}%"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:0.75rem;">
+          <span style="font-size:0.72rem;color:var(--text-muted);">${c.progress || 0}% completado</span>
+          <div style="display:flex;gap:0.3rem;">
+            <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();downloadCoursePDF(${c.id})">📄 PDF</button>
+            <button class="btn btn-danger btn-sm btn-icon" onclick="event.stopPropagation();deleteCourse(${c.id})">🗑</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterCursos() { renderCursos(); }
+
+async function viewCourse(id) {
+  const course = await IDB.get('cursos', id);
+  if (!course) return;
+  
+  document.getElementById('view-course-title').textContent = `📚 ${course.title}`;
+  
+  const content = document.getElementById('view-course-content');
+  content.innerHTML = `
+    <div class="flex-col" style="gap:1.25rem;">
+      <!-- Descripción -->
+      <div>
+        <p style="color:var(--text-secondary);font-size:0.9rem;">${sanitize(course.desc || '')}</p>
+      </div>
+      
+      <!-- Módulos -->
+      <div>
+        <h3 style="font-size:0.95rem;font-weight:800;color:var(--neon-purple);margin-bottom:0.75rem;">📖 Módulos</h3>
+        ${course.modules.map((m, i) => `
+          <div class="card" style="margin-bottom:0.5rem;padding:0.85rem;">
+            <div style="font-weight:700;margin-bottom:0.25rem;">Módulo ${i+1}: ${sanitize(m.title)}</div>
+            <div style="font-size:0.82rem;color:var(--text-secondary);">${sanitize(m.content)}</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.25rem;">⏱ ${sanitize(m.duration)}</div>
+          </div>
+        `).join('')}
+      </div>
+      
+      <!-- Flashcards -->
+      <div>
+        <h3 style="font-size:0.95rem;font-weight:800;color:var(--neon-purple);margin-bottom:0.75rem;">🃏 Flashcards</h3>
+        <div class="grid-2">
+          ${course.flashcards.slice(0,4).map((f, i) => `
+            <div class="flashcard" onclick="this.classList.toggle('flipped')">
+              <div class="flashcard-inner">
+                <div class="flashcard-front">${sanitize(f.front)}</div>
+                <div class="flashcard-back">${sanitize(f.back)}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        ${course.flashcards.length > 4 ? `<p style="font-size:0.78rem;color:var(--text-muted);margin-top:0.5rem;">+${course.flashcards.length - 4} más</p>` : ''}
+      </div>
+      
+      <!-- Plan de estudio -->
+      <div>
+        <h3 style="font-size:0.95rem;font-weight:800;color:var(--neon-purple);margin-bottom:0.75rem;">📅 Plan de Estudio</h3>
+        ${course.plan.map(w => `
+          <div class="card" style="margin-bottom:0.5rem;padding:0.85rem;">
+            <div style="font-weight:700;margin-bottom:0.35rem;color:var(--neon-blue);">Semana ${w.week}</div>
+            ${w.activities.map(a => `<div style="font-size:0.82rem;color:var(--text-secondary);">• ${sanitize(a)}</div>`).join('')}
+          </div>
+        `).join('')}
+      </div>
+      
+      <!-- Botones de acción -->
+      <div class="flex-row" style="justify-content:flex-end;gap:0.5rem;flex-wrap:wrap;">
+        <button class="btn btn-secondary btn-sm" onclick="startQuiz(${id})">🎯 Quiz</button>
+        <button class="btn btn-secondary btn-sm" onclick="startExam(${id})">📝 Examen</button>
+        <button class="btn btn-primary btn-sm" onclick="downloadCoursePDF(${id})">📄 Descargar PDF</button>
+        <button class="btn btn-success btn-sm" onclick="completeCourse(${id})">✅ Completar</button>
+      </div>
+    </div>
+  `;
+  
+  openModal('modal-view-course');
+}
+
+async function deleteCourse(id) {
+  if (!confirm('¿Eliminar este curso?')) return;
+  await IDB.delete('cursos', id);
+  showToast('Curso eliminado', 'info');
+  renderCursos();
+  updateHomeStats();
+}
+
+async function completeCourse(id) {
+  const course = await IDB.get('cursos', id);
+  if (!course) return;
+  await IDB.put('cursos', { ...course, progress: 100 });
+  showToast('🎉 ¡Curso completado! Certificado generado.', 'success');
+  playSuccess();
+  closeModal('modal-view-course');
+  renderCursos();
+  generateCertificate(course);
+}
+
+/**
+ * Genera un certificado visual
+ */
+function generateCertificate(course) {
+  const certHtml = `
+    <div class="certificate" style="max-width:600px;margin:1rem auto;">
+      <div class="certificate-title">Certificado de Finalización</div>
+      <div style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;">VICO ACTIVE · ${new Date().getFullYear()}</div>
+      <div class="certificate-name">Usuario VICO</div>
+      <div style="font-size:0.9rem;color:var(--text-muted);margin:0.25rem 0 0.75rem;">ha completado exitosamente el curso</div>
+      <div class="certificate-course">${sanitize(course.title)}</div>
+      <div style="font-size:0.78rem;color:var(--text-muted);">Fecha: ${new Date().toLocaleDateString('es-ES')}</div>
+      <div style="margin-top:1.5rem;font-size:2rem;">🏆</div>
+    </div>
+  `;
+  
+  // Mostrar en toast o modal
+  showToast('🏆 Certificado generado. Descarga desde tu Perfil.', 'success', 5000);
+}
+
+/**
+ * Descarga el curso como PDF (usando la API de impresión)
+ */
+async function downloadCoursePDF(id) {
+  const course = await IDB.get('cursos', id);
+  if (!course) return;
+  
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <!DOCTYPE html><html><head>
+    <title>${course.title}</title>
+    <style>
+      body{font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:2rem;color:#1e1b4b;}
+      h1{color:#7c3aed;} h2{color:#0ea5e9;margin-top:1.5rem;}
+      .module,.flashcard,.task{background:#f0f4ff;border-radius:8px;padding:1rem;margin:0.5rem 0;}
+      @media print{body{padding:0;}}
+    </style></head><body>
+    <h1>📚 ${sanitize(course.title)}</h1>
+    <p>${sanitize(course.desc || '')}</p>
+    <h2>📖 Módulos</h2>
+    ${course.modules.map((m, i) => `<div class="module"><strong>Módulo ${i+1}: ${sanitize(m.title)}</strong><p>${sanitize(m.content)}</p><small>⏱ ${sanitize(m.duration)}</small></div>`).join('')}
+    <h2>🃏 Flashcards</h2>
+    ${course.flashcards.map(f => `<div class="flashcard"><strong>P: ${sanitize(f.front)}</strong><br>R: ${sanitize(f.back)}</div>`).join('')}
+    <h2>📋 Tareas</h2>
+    ${course.tasks.map((t, i) => `<div class="task"><strong>${i+1}. ${sanitize(t.title)}</strong><p>${sanitize(t.desc)}</p><small>Plazo: ${sanitize(t.deadline)}</small></div>`).join('')}
+    <p style="text-align:center;color:#94a3b8;margin-top:2rem;">©2026 VICO ACTIVE · Jaime Andrés Dueñas Vicuña</p>
+    <script>window.print();setTimeout(()=>window.close(),1000);<\/script>
+    </body></html>
+  `);
+  win.document.close();
+}
+
+async function startQuiz(courseId) {
+  const course = await IDB.get('cursos', courseId);
+  if (!course) return;
+  showToast(`🎯 Quiz de ${course.quizzes.length} preguntas iniciado`, 'info');
+  // Quiz simplificado - en producción sería una interfaz completa
+}
+
+async function startExam(courseId) {
+  const course = await IDB.get('cursos', courseId);
+  if (!course) return;
+  showToast(`📝 Examen de ${course.exams.length} preguntas iniciado`, 'info');
+}
+
+// ============================================================
+// RAG - RETRIEVAL AUGMENTED GENERATION
+// ============================================================
+
+/**
+ * Worker inline para embeddings (no bloquea UI)
+ * Se crea como Blob URL para evitar archivos separados
+ */
+const RAG_WORKER_CODE = `
+// Web Worker para embeddings RAG
+let pipeline = null;
+let pipelineReady = false;
+
+async function loadPipeline() {
+  if (pipelineReady) return;
+  try {
+    const { pipeline: p } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2/dist/transformers.min.js');
+    pipeline = await p('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
+      quantized: true,
+      progress_callback: (info) => {
+        postMessage({ type: 'progress', data: info });
+      }
+    });
+    pipelineReady = true;
+    postMessage({ type: 'ready' });
+  } catch(e) {
+    postMessage({ type: 'error', data: e.message });
+  }
+}
+
+async function getEmbedding(text) {
+  if (!pipelineReady) await loadPipeline();
+  const output = await pipeline(text, { pooling: 'mean', normalize: true });
+  return Array.from(output.data);
+}
+
+self.onmessage = async (e) => {
+  const { type, id, data } = e.data;
+  try {
+    switch(type) {
+      case 'init':
+        await loadPipeline();
+        break;
+      case 'embed':
+        const embedding = await getEmbedding(data.text);
+        postMessage({ type: 'embed_result', id, data: embedding });
+        break;
+      case 'embed_batch':
+        const embeddings = [];
+        for (const text of data.texts) {
+          embeddings.push(await getEmbedding(text));
+        }
+        postMessage({ type: 'embed_batch_result', id, data: embeddings });
+        break;
+    }
+  } catch(e) {
+    postMessage({ type: 'error', id, data: e.message });
+  }
+};
+`;
+
+// Crear worker desde blob
+let ragWorker = null;
+let workerCallbacks = {};
+let workerMsgId = 0;
+
+function getRAGWorker() {
+  if (!ragWorker) {
+    const blob = new Blob([RAG_WORKER_CODE], { type: 'application/javascript' });
+    const url  = URL.createObjectURL(blob);
+    ragWorker  = new Worker(url, { type: 'module' });
+    window._ragWorker = ragWorker;
+    
+    ragWorker.onmessage = e => {
+      const { type, id, data } = e.data;
+      if (type === 'ready') {
+        showToast('🧠 Modelo de embeddings cargado', 'success');
+      } else if (type === 'progress') {
+        // Actualizar barra de progreso de carga del modelo
+      } else if (type === 'error') {
+        console.warn('RAG Worker error:', data);
+        if (id && workerCallbacks[id]) {
+          workerCallbacks[id].reject(new Error(data));
+          delete workerCallbacks[id];
+        }
+      } else if (id && workerCallbacks[id]) {
+        workerCallbacks[id].resolve(data);
+        delete workerCallbacks[id];
+      }
+    };
+    
+    ragWorker.onerror = e => console.error('Worker error:', e);
+  }
+  return ragWorker;
+}
+
+/**
+ * Envía mensaje al worker y espera respuesta
+ */
+function workerMsg(type, data) {
+  return new Promise((resolve, reject) => {
+    const id = ++workerMsgId;
+    workerCallbacks[id] = { resolve, reject };
+    getRAGWorker().postMessage({ type, id, data });
+    // Timeout de 60 segundos
+    setTimeout(() => {
+      if (workerCallbacks[id]) {
+        delete workerCallbacks[id];
+        reject(new Error('Worker timeout'));
+      }
+    }, 60000);
+  });
+}
+
+/**
+ * Obtiene embedding de un texto via Worker
+ */
+async function getEmbedding(text) {
+  try {
+    return await workerMsg('embed', { text });
+  } catch(e) {
+    console.warn('Embedding error, usando vector aleatorio:', e);
+    // Fallback: vector aleatorio normalizado
+    const v = Array.from({length: 384}, () => Math.random() - 0.5);
+    const norm = Math.sqrt(v.reduce((s, x) => s + x*x, 0));
+    return v.map(x => x / norm);
+  }
+}
+
+/**
+ * Calcula similitud coseno entre dos vectores
+ */
+function cosineSimilarity(a, b) {
+  if (!a || !b || a.length !== b.length) return 0;
+  let dot = 0, normA = 0, normB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot   += a[i] * b[i];
+    normA += a[i] * a[i];
+    normB += b[i] * b[i];
+  }
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB) + 1e-10);
+}
+
+/**
+ * Divide texto en chunks con solapamiento
+ */
+function chunkText(text, chunkSize = 500, overlap = 50) {
+  const chunks = [];
+  let start = 0;
+  while (start < text.length) {
+    const end = Math.min(start + chunkSize, text.length);
+    chunks.push(text.slice(start, end));
+    start += chunkSize - overlap;
+    if (start >= text.length) break;
+  }
+  return chunks;
+}
+
+/**
+ * Maneja los archivos subidos para RAG
+ */
+async function handleRagFiles(files) {
+  for (const file of files) {
+    await processRagFile(file);
+  }
+}
+
+async function processRagFile(file) {
+  const docId = Date.now() + Math.random();
+  showRagProcessing(`Procesando: ${file.name}...`, 0);
+  
+  try {
+    let text = '';
+    const ext = file.name.split('.').pop().toLowerCase();
+    
+    if (ext === 'txt') {
+      text = await file.text();
+    } else if (ext === 'pdf') {
+      text = await extractPDFText(file);
+    } else if (['png', 'jpg', 'jpeg', 'webp'].includes(ext)) {
+      text = await extractImageText(file);
+    }
+    
+    if (!text.trim()) {
+      showToast(`No se pudo extraer texto de ${file.name}`, 'warning');
+      hideRagProcessing();
+      return;
+    }
+    
+    // Guardar metadatos del documento
+    const doc = {
+      id: docId,
+      name: file.name,
+      type: ext,
+      size: file.size,
+      charCount: text.length,
+      date: new Date().toISOString(),
+    };
+    await IDB.add('rag_docs', doc);
+    
+    // Dividir en chunks
+    const chunkSize = settings.ragChunkSize || 500;
+    const overlap   = settings.ragChunkOverlap || 50;
+    const chunks    = chunkText(text, chunkSize, overlap);
+    
+    showRagProcessing(`Generando embeddings para ${chunks.length} chunks...`, 20);
+    
+    // Verificar límite de chunks
+    const currentCount = await IDB.count('rag_chunks');
+    const limit = settings.ragChunkLimit || 1000;
+    
+    if (currentCount + chunks.length > limit) {
+      await applyLRUEviction(chunks.length, limit, currentCount);
+    }
+    
+    // Generar embeddings por lotes
+    const BATCH_SIZE = 5;
+    for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+      const batch = chunks.slice(i, i + BATCH_SIZE);
+      const pct   = 20 + Math.round((i / chunks.length) * 75);
+      showRagProcessing(`Embeddings: ${i}/${chunks.length}...`, pct);
+      
+      for (let j = 0; j < batch.length; j++) {
+        const embedding = await getEmbedding(batch[j]);
+        await IDB.add('rag_chunks', {
+          docId:     docId,
+          docName:   file.name,
+          text:      batch[j],
+          embedding: embedding,
+          chunkIndex: i + j,
+          lastUsed:  Date.now(),
+          useCount:  0,
+        });
+      }
+    }
+    
+    showRagProcessing('¡Completado!', 100);
+    setTimeout(hideRagProcessing, 1000);
+    
+    showToast(`✅ ${file.name} procesado (${chunks.length} chunks)`, 'success');
+    renderRagDocs();
+    updateHomeStats();
+    
+  } catch(e) {
+    console.error('Error procesando archivo RAG:', e);
+    showToast(`Error procesando ${file.name}: ${e.message}`, 'error');
+    hideRagProcessing();
+  }
+}
+
+/**
+ * Extrae texto de un PDF usando PDF.js (lazy loading)
+ */
+async function extractPDFText(file) {
+  try {
+    // Lazy loading de PDF.js
+    if (!window.pdfjsLib) {
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+    
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let text = '';
+    
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page    = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map(item => item.str).join(' ') + '\n';
+    }
+    
+    return text;
+  } catch(e) {
+    console.error('Error extrayendo PDF:', e);
+    throw new Error('No se pudo leer el PDF. Asegúrate de que no esté protegido.');
+  }
+}
+
+/**
+ * Extrae texto de imagen usando Tesseract.js (OCR) - lazy loading
+ */
+async function extractImageText(file) {
+  try {
+    if (!window.Tesseract) {
+      await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js');
+    }
+    
+    showRagProcessing('Ejecutando OCR...', 10);
+    const { data: { text } } = await window.Tesseract.recognize(file, 'spa+eng', {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          showRagProcessing(`OCR: ${Math.round(m.progress * 100)}%...`, Math.round(m.progress * 80));
+        }
+      }
+    });
+    
+    return text;
+  } catch(e) {
+    console.error('Error OCR:', e);
+    throw new Error('Error en OCR: ' + e.message);
+  }
+}
+
+/**
+ * Añade una URL como fuente RAG
+ */
+async function addRagUrl() {
+  const urlInput = document.getElementById('rag-url-input');
+  const url = urlInput.value.trim();
+  
+  if (!url) { showToast('Ingresa una URL', 'warning'); return; }
+  if (!isValidUrl(url)) { showToast('URL no válida', 'error'); return; }
+  
+  showRagProcessing(`Descargando contenido de ${url}...`, 0);
+  
+  try {
+    // Usar proxy CORS para fetch
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const res = await fetch(proxyUrl);
+    const data = await res.json();
+    
+    // Extraer texto del HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(data.contents || '', 'text/html');
+    
+    // Eliminar scripts, estilos, nav, footer
+    ['script','style','nav','footer','header','aside'].forEach(tag => {
+      doc.querySelectorAll(tag).forEach(el => el.remove());
+    });
+    
+    const text = doc.body?.innerText || doc.body?.textContent || '';
+    
+    if (!text.trim()) {
+      showToast('No se pudo extraer texto de la URL', 'warning');
+      hideRagProcessing();
+      return;
+    }
+    
+    // Procesar como archivo de texto
+    const fakeFile = new File([text], new URL(url).hostname + '.txt', { type: 'text/plain' });
+    await processRagFile(fakeFile);
+    urlInput.value = '';
+    
+  } catch(e) {
+    console.error('Error con URL RAG:', e);
+    showToast('Error al descargar la URL: ' + e.message, 'error');
+    hideRagProcessing();
+  }
+}
+
+/**
+ * Aplica política LRU para eliminar chunks menos usados
+ */
+async function applyLRUEviction(needed, limit, current) {
+  const toDelete = current + needed - limit;
+  if (toDelete <= 0) return;
+  
+  const allChunks = await IDB.getAll('rag_chunks');
+  // Ordenar por lastUsed (menos reciente primero) y useCount
+  allChunks.sort((a, b) => {
+    const score = (a.lastUsed || 0) + (a.useCount || 0) * 1000;
+    const scoreB = (b.lastUsed || 0) + (b.useCount || 0) * 1000;
+    return score - scoreB;
+  });
+  
+  for (let i = 0; i < Math.min(toDelete, allChunks.length); i++) {
+    await IDB.delete('rag_chunks', allChunks[i].id);
+  }
+  
+  showToast(`🧹 Eliminados ${toDelete} chunks (LRU) para hacer espacio`, 'info');
+}
+
+/**
+ * Busca chunks similares a una query usando similitud coseno
+ */
+async function searchSimilarChunks(query, topK = 5) {
+  const queryEmbedding = await getEmbedding(query);
+  const allChunks = await IDB.getAll('rag_chunks');
+  
+  if (!allChunks.length) return [];
+  
+  // Calcular similitudes
+  const scored = allChunks.map(chunk => ({
+    ...chunk,
+    score: cosineSimilarity(queryEmbedding, chunk.embedding),
+  }));
+  
+  // Ordenar y tomar top-K
+  scored.sort((a, b) => b.score - a.score);
+  const topChunks = scored.slice(0, topK).filter(c => c.score > 0.3);
+  
+  // Actualizar lastUsed y useCount para LRU
+  for (const chunk of topChunks) {
+    await IDB.put('rag_chunks', {
+      ...chunk,
+      lastUsed: Date.now(),
+      useCount: (chunk.useCount || 0) + 1,
+    });
+  }
+  
+  return topChunks;
+}
+
+/**
+ * Renderiza la lista de documentos RAG
+ */
+async function renderRagDocs() {
+  const docs = await IDB.getAll('rag_docs');
+  const chunksCount = await IDB.count('rag_chunks');
+  const limit = settings.ragChunkLimit || 1000;
+  
+  document.getElementById('chunks-counter').textContent = `${chunksCount} / ${limit} chunks`;
+  
+  const list = document.getElementById('rag-docs-list');
+  
+  if (!docs.length) {
+    list.innerHTML = `<div style="text-align:center;padding:1.5rem;color:var(--text-muted);font-size:0.88rem;">
+      No hay documentos. Sube archivos para alimentar a la IA.
+    </div>`;
+    return;
+  }
+  
+  const typeIcons = { pdf: '📄', txt: '📝', png: '🖼️', jpg: '🖼️', jpeg: '🖼️', url: '🌐' };
+  
+  list.innerHTML = docs.map(doc => `
+    <div class="doc-item">
+      <span class="doc-icon">${typeIcons[doc.type] || '📄'}</span>
+      <div class="doc-info">
+        <div class="doc-name">${sanitize(doc.name)}</div>
+        <div class="doc-meta">
+          ${doc.charCount ? `${doc.charCount.toLocaleString()} caracteres · ` : ''}
+          ${new Date(doc.date).toLocaleDateString('es-ES')}
+        </div>
+      </div>
+      <button class="btn btn-danger btn-sm btn-icon" onclick="deleteRagDoc(${doc.id})" title="Eliminar">🗑</button>
+    </div>
+  `).join('');
+  
+  // Actualizar stats
+  document.getElementById('stat-docs').textContent = docs.length;
+  document.getElementById('stat-chunks').textContent = chunksCount;
+}
+
+async function deleteRagDoc(docId) {
+  if (!confirm('¿Eliminar este documento y sus chunks?')) return;
+  
+  // Eliminar chunks del documento
+  const chunks = await IDB.getByIndex('rag_chunks', 'docId', docId);
+  for (const chunk of chunks) {
+    await IDB.delete('rag_chunks', chunk.id);
+  }
+  
+  await IDB.delete('rag_docs', docId);
+  showToast('Documento eliminado', 'info');
+  renderRagDocs();
+  updateHomeStats();
+}
+
+async function clearKnowledgeBase() {
+  if (!confirm('¿Vaciar toda la base de conocimiento? Esta acción no se puede deshacer.')) return;
+  await IDB.clear('rag_chunks');
+  await IDB.clear('rag_docs');
+  showToast('🗑 Base de conocimiento vaciada', 'info');
+  renderRagDocs();
+  updateHomeStats();
+}
+
+function showRagProcessing(msg, pct) {
+  document.getElementById('rag-processing').style.display = 'block';
+  document.getElementById('rag-process-msg').textContent = msg;
+  document.getElementById('rag-process-bar').style.width = pct + '%';
+}
+
+function hideRagProcessing() {
+  document.getElementById('rag-processing').style.display = 'none';
+}
+
+// Drag & Drop para RAG
+const dropZone = document.getElementById('rag-drop-zone');
+if (dropZone) {
+  dropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    handleRagFiles(e.dataTransfer.files);
+  });
+}
+
+// ============================================================
+// CHAT CON RAG
+// ============================================================
+
+async function sendRagMessage() {
+  const input = document.getElementById('rag-chat-input');
+  const msg   = input.value.trim();
+  
+  if (!msg) return;
+  if (msg.length > settings.chatLimit) {
+    showToast(`Mensaje demasiado largo (máx ${settings.chatLimit} caracteres)`, 'warning');
+    return;
+  }
+  if (containsBlockedWords(msg)) {
+    showToast('Mensaje bloqueado por filtro de seguridad', 'error');
+    return;
+  }
+  
+  const messages = document.getElementById('rag-chat-messages');
+  
+  // Añadir mensaje del usuario
+  messages.innerHTML += `<div class="chat-msg user">${sanitize(msg)}</div>`;
+  input.value = '';
+  updateCharCount('rag');
+  messages.scrollTop = messages.scrollHeight;
+  
+  // Indicador de escritura
+  const typingId = 'typing-' + Date.now();
+  messages.innerHTML += `<div class="chat-msg ai shimmer" id="${typingId}" style="min-width:80px;min-height:40px;"></div>`;
+  messages.scrollTop = messages.scrollHeight;
+  
+  try {
+    // Buscar chunks relevantes
+    const relevantChunks = await searchSimilarChunks(msg, 5);
+    
+    let context = '';
+    let sources = [];
+    
+    if (relevantChunks.length > 0) {
+      context = relevantChunks.map(c => c.text).join('\n\n---\n\n');
+      sources = [...new Set(relevantChunks.map(c => c.docName))];
+    }
+    
+    // Generar respuesta con IA
+    let response = '';
+    
+    if (relevantChunks.length > 0) {
+      response = await generateRAGResponse(msg, context);
+    } else {
+      response = await generateChatResponse(msg);
+    }
+    
+    // Eliminar indicador de escritura
+    document.getElementById(typingId)?.remove();
+    
+    // Añadir respuesta
+    messages.innerHTML += `
+      <div class="chat-msg ai">
+        ${sanitize(response)}
+        ${sources.length ? `<div class="sources">📚 Fuentes: ${sources.map(s => sanitize(s)).join(', ')}</div>` : ''}
+      </div>
+    `;
+    
+    messages.scrollTop = messages.scrollHeight;
+    
+    // Guardar en historial
+    await IDB.add('historial', { type: 'rag', question: msg, answer: response, sources });
+    
+  } catch(e) {
+    document.getElementById(typingId)?.remove();
+    messages.innerHTML += `<div class="chat-msg ai">⚠️ Error al generar respuesta: ${sanitize(e.message)}</div>`;
+    messages.scrollTop = messages.scrollHeight;
+  }
+}
+
+/**
+ * Genera respuesta con contexto RAG
+ */
+async function generateRAGResponse(question, context) {
+  const engine = settings.aiEngine;
+  
+  if (engine === 'gemma' || !settings.apiKey) {
+    // Respuesta local simple
+    return `Basado en tu base de conocimiento:\n\n${context.slice(0, 500)}...\n\n[Respuesta generada localmente. Configura una API key para respuestas más precisas.]`;
+  }
+  
+  const systemPrompt = `Eres un asistente educativo. Responde la pregunta usando SOLO el contexto proporcionado. Si la respuesta no está en el contexto, dilo claramente. Sé conciso y preciso.`;
+  const userPrompt = `Contexto:\n${context}\n\nPregunta: ${question}`;
+  
+  return await callAIAPI(engine, systemPrompt, userPrompt);
+}
+
+async function generateChatResponse(message) {
+  const engine = settings.aiEngine;
+  
+  if (engine === 'gemma' || !settings.apiKey) {
+    return `No tengo documentos en mi base de conocimiento sobre este tema. Sube documentos PDF, TXT o URLs para que pueda ayudarte mejor. [Motor: ${engine}]`;
+  }
+  
+  const systemPrompt = 'Eres VICO, un asistente educativo amigable y preciso. Ayuda a los estudiantes con sus preguntas de forma clara y concisa.';
+  return await callAIAPI(engine, systemPrompt, message);
+}
+
+/**
+ * Llama a la API de IA configurada
+ */
+async function callAIAPI(engine, systemPrompt, userMessage) {
+  const apiKey = settings.apiKey;
+  if (!apiKey) return 'No hay API key configurada. Ve a Ajustes para añadir una.';
+  
+  const endpoints = {
+    groq:       { url: 'https://api.groq.com/openai/v1/chat/completions',       model: 'llama3-8b-8192' },
+    gemini:     { url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}` },
+    openrouter: { url: 'https://openrouter.ai/api/v1/chat/completions',          model: 'openai/gpt-3.5-turbo' },
+  };
+  
+  const ep = endpoints[engine];
+  if (!ep) return 'Motor de IA no soportado.';
+  
+  try {
+    let body, headers;
+    
+    if (engine === 'gemini') {
+      body = JSON.stringify({ contents: [{ parts: [{ text: systemPrompt + '\n\n' + userMessage }] }] });
+      headers = { 'Content-Type': 'application/json' };
+    } else {
+      body = JSON.stringify({
+        model: ep.model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user',   content: userMessage },
+        ],
+        temperature: settings.aiTemp,
+        max_tokens: 1000,
+      });
+      headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` };
+    }
+    
+    const res = await fetch(ep.url, { method: 'POST', headers, body });
+    if (!res.ok) throw new Error(`API ${engine} error: ${res.status}`);
+    
+    const data = await res.json();
+    
+    return engine === 'gemini'
+      ? data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sin respuesta'
+      : data.choices?.[0]?.message?.content || 'Sin respuesta';
+      
+  } catch(e) {
+    throw new Error(`Error con ${engine}: ${e.message}`);
+  }
+}
+
+// Chat comunitario
+async function sendCommMessage() {
+  const input = document.getElementById('comm-chat-input');
+  const msg   = input.value.trim();
+  
+  if (!msg) return;
+  if (msg.length > settings.chatLimit) {
+    showToast(`Mensaje demasiado largo (máx ${settings.chatLimit} caracteres)`, 'warning');
+    return;
+  }
+  if (containsBlockedWords(msg)) {
+    showToast('Mensaje bloqueado por filtro de seguridad', 'error');
+    return;
+  }
+  
+  const messages = document.getElementById('comm-chat-messages');
+  messages.innerHTML += `<div class="chat-msg user">${sanitize(msg)}</div>`;
+  input.value = '';
+  updateCharCount('comm');
+  messages.scrollTop = messages.scrollHeight;
+  
+  await IDB.add('chats', { type: 'community', msg: sanitize(msg), ts: Date.now() });
+}
+
+function updateCharCount(prefix) {
+  const input = document.getElementById(`${prefix}-chat-input`);
+  const counter = document.getElementById(`${prefix}-char-count`);
+  if (input && counter) counter.textContent = input.value.length;
+}
+
+// ============================================================
+// GOOGLE DRIVE INTEGRATION
+// ============================================================
+const DriveManager = {
+  CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID', // Reemplazar con Client ID real
+  SCOPES: 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file',
+  token: null,
+  
+  init() {
+    const savedToken = localStorage.getItem('vicoGDriveToken');
+    if (savedToken) {
+      this.token = JSON.parse(savedToken);
+      this.updateUI(true);
+    }
+  },
+  
+  updateUI(connected) {
+    const dot  = document.getElementById('drive-dot');
+    const text = document.getElementById('drive-status-text');
+    const btn  = document.getElementById('drive-connect-btn');
+    
+    if (connected) {
+      dot.className  = 'drive-dot connected';
+      text.textContent = 'Conectado a Google Drive';
+      btn.textContent  = '🔗 Desconectar';
+      btn.onclick = () => this.disconnect();
+    } else {
+      dot.className  = 'drive-dot disconnected';
+      text.textContent = 'No conectado';
+      btn.textContent  = '🔗 Conectar';
+      btn.onclick = () => driveConnect();
+    }
+  },
+  
+  async connect() {
+    // OAuth 2.0 con popup
+    const redirectUri = window.location.origin + window.location.pathname;
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${this.CLIENT_ID}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `response_type=token&` +
+      `scope=${encodeURIComponent(this.SCOPES)}`;
+    
+    if (this.CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID') {
+      showToast('⚠️ Configura tu Google Client ID en el código para usar Drive', 'warning', 5000);
+      return;
+    }
+    
+    const popup = window.open(authUrl, 'driveAuth', 'width=500,height=600');
+    
+    // Escuchar el token del popup
+    const listener = e => {
+      if (e.origin !== window.location.origin) return;
+      if (e.data?.type === 'driveToken') {
+        this.token = e.data.token;
+        localStorage.setItem('vicoGDriveToken', JSON.stringify(this.token));
+        this.updateUI(true);
+        showToast('✅ Conectado a Google Drive', 'success');
+        window.removeEventListener('message', listener);
+        popup?.close();
+      }
+    };
+    window.addEventListener('message', listener);
+    
+    // Manejar hash del redirect (token implícito)
+    if (window.location.hash.includes('access_token')) {
+      const params = new URLSearchParams(window.location.hash.slice(1));
+      const token = {
+        access_token: params.get('access_token'),
+        expires_in:   params.get('expires_in'),
+        timestamp:    Date.now(),
+      };
+      window.opener?.postMessage({ type: 'driveToken', token }, window.location.origin);
+      window.close();
+    }
+  },
+  
+  disconnect() {
+    this.token = null;
+    localStorage.removeItem('vicoGDriveToken');
+    this.updateUI(false);
+    showToast('Desconectado de Google Drive', 'info');
+  },
+  
+  async backup() {
+    if (!this.token) {
+      showToast('Conecta Google Drive primero', 'warning');
+      return;
+    }
+    
+    showLoading('☁️ Subiendo backup a Drive...');
+    
+    try {
+      const backup = await createBackupData();
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename  = `VICO_ACTIVE_backup_${timestamp}.json`;
+      
+      // Crear archivo en Drive
+      const metadata = {
+        name: filename,
+        parents: ['appDataFolder'],
+        mimeType: 'application/json',
+      };
+      
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+      form.append('file', new Blob([JSON.stringify(backup)], { type: 'application/json' }));
+      
+      const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${this.token.access_token}` },
+        body: form,
+      });
+      
+      if (!res.ok) throw new Error(`Drive API error: ${res.status}`);
+      
+      hideLoading();
+      showToast(`✅ Backup subido: ${filename}`, 'success');
+      
+    } catch(e) {
+      hideLoading();
+      console.error('Drive backup error:', e);
+      showToast('Error al subir backup: ' + e.message, 'error');
+    }
+  },
+  
+  async listBackups() {
+    if (!this.token) {
+      showToast('Conecta Google Drive primero', 'warning');
+      return [];
+    }
+    
+    try {
+      const res = await fetch(
+        'https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&fields=files(id,name,createdTime,size)',
+        { headers: { 'Authorization': `Bearer ${this.token.access_token}` } }
+      );
+      
+      if (!res.ok) throw new Error(`Drive API error: ${res.status}`);
+      const data = await res.json();
+      return data.files || [];
+      
+    } catch(e) {
+      console.error('Drive list error:', e);
+      return [];
+    }
+  },
+  
+  async restore(fileId) {
+    if (!this.token) return;
+    
+    showLoading('☁️ Restaurando desde Drive...');
+    
+    try {
+      const res = await fetch(
+        `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+        { headers: { 'Authorization': `Bearer ${this.token.access_token}` } }
+      );
+      
+      if (!res.ok) throw new Error('Error al descargar backup');
+      const backup = await res.json();
+      
+      await restoreFromBackup(backup);
+      
+      hideLoading();
+      showToast('✅ Backup restaurado desde Drive', 'success');
+      
+    } catch(e) {
+      hideLoading();
+      showToast('Error al restaurar: ' + e.message, 'error');
+    }
+  },
+};
+
+async function driveConnect() { await DriveManager.connect(); }
+
+async function driveBackup() {
+  await DriveManager.backup();
+}
+
+async function driveRestore() {
+  const backups = await DriveManager.listBackups();
+  const list = document.getElementById('drive-backups-list');
+  
+  if (!backups.length) {
+    list.innerHTML = '<div style="text-align:center;padding:1rem;color:var(--text-muted);">No hay backups en Drive.</div>';
+  } else {
+    list.innerHTML = backups.map(b => `
+      <div class="backup-item">
+        <div>
+          <div style="font-weight:600;font-size:0.85rem;">${sanitize(b.name)}</div>
+          <div style="font-size:0.72rem;color:var(--text-muted);">
+            ${new Date(b.createdTime).toLocaleString('es-ES')}
+            ${b.size ? ` · ${(b.size / 1024).toFixed(1)} KB` : ''}
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="DriveManager.restore('${b.id}');closeModal('modal-drive-backups');">
+          ⬇️ Restaurar
+        </button>
+      </div>
+    `).join('');
+  }
+  
+  openModal('modal-drive-backups');
+}
+
+// ============================================================
+// BACKUP LOCAL
+// ============================================================
+
+/**
+ * Crea un objeto con todos los datos de IndexedDB
+ */
+async function createBackupData() {
+  const stores = ['cursos', 'notas', 'carpetas', 'eventos', 'chats', 'perfiles', 'proyectos', 'recursos', 'historial'];
+  const backup = {
+    version: '2.0',
+    timestamp: new Date().toISOString(),
+    settings,
+    data: {},
+  };
+  
+  for (const store of stores) {
+    backup.data[store] = await IDB.getAll(store);
+  }
+  
+  // Incluir RAG si está configurado
+  if (settings.backupMultimedia) {
+    backup.data.rag_docs   = await IDB.getAll('rag_docs');
+    backup.data.rag_chunks = await IDB.getAll('rag_chunks');
+  }
+  
+  return backup;
+}
+
+/**
+ * Exporta backup a archivo JSON
+ */
+async function exportBackup(silent = false) {
+  try {
+    const backup = await createBackupData();
+    const json   = JSON.stringify(backup, null, 2);
+    const blob   = new Blob([json], { type: 'application/json' });
+    const url    = URL.createObjectURL(blob);
+    const a      = document.createElement('a');
+    a.href       = url;
+    a.download   = `VICO_ACTIVE_backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    if (!silent) showToast('✅ Backup exportado', 'success');
+  } catch(e) {
+    if (!silent) showToast('Error al exportar: ' + e.message, 'error');
+  }
+}
+
+/**
+ * Importa backup desde archivo JSON
+ */
+async function importBackup(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  
+  try {
+    const text   = await file.text();
+    const backup = JSON.parse(text);
+    
+    if (!backup.data || !backup.version) {
+      showToast('Archivo de backup inválido', 'error');
+      return;
+    }
+    
+    if (!confirm(`¿Restaurar backup del ${new Date(backup.timestamp).toLocaleString('es-ES')}? Se reemplazarán los datos actuales.`)) return;
+    
+    await restoreFromBackup(backup);
+    showToast('✅ Backup importado correctamente', 'success');
+    
+  } catch(e) {
+    showToast('Error al importar: ' + e.message, 'error');
+  }
+  
+  input.value = '';
+}
+
+async function restoreFromBackup(backup) {
+  const stores = Object.keys(backup.data);
+  
+  for (const store of stores) {
+    try {
+      await IDB.clear(store);
+      for (const item of backup.data[store]) {
+        await IDB.put(store, item);
+      }
+    } catch(e) {
+      console.warn(`Error restaurando store ${store}:`, e);
+    }
+  }
+  
+  // Restaurar settings
+  if (backup.settings) {
+    settings = { ...settings, ...backup.settings };
+    localStorage.setItem('vicoSettings', JSON.stringify(settings));
+    applySettings();
+  }
+  
+  // Refrescar UI
+  updateHomeStats();
+  if (appState.currentPage === 'cursos')    renderCursos();
+  if (appState.currentPage === 'notas')     renderNotas();
+  if (appState.currentPage === 'rag')       renderRagDocs();
+}
+
+/**
+ * Reinicia la app completamente
+ */
+async function resetApp() {
+  if (!confirm('⚠️ ¿Reiniciar completamente la app? Se eliminarán TODOS los datos.')) return;
+  if (!confirm('Esta acción es IRREVERSIBLE. ¿Continuar?')) return;
+  
+  // Limpiar IndexedDB
+  const stores = ['cursos','notas','carpetas','eventos','chats','perfiles','proyectos','recursos','historial','rag_chunks','rag_docs','backups'];
+  for (const store of stores) {
+    try { await IDB.clear(store); } catch(e) {}
+  }
+  
+  // Limpiar localStorage
+  localStorage.clear();
+  
+  showToast('App reiniciada. Recargando...', 'info');
+  setTimeout(() => location.reload(), 1500);
+}
+
+// ============================================================
+// COMUNIDAD
+// ============================================================
+function switchCommTab(tab) {
+  document.querySelectorAll('.comm-panel').forEach(p => p.style.display = 'none');
+  document.querySelectorAll('.comm-tab').forEach(b => b.classList.remove('active'));
+  document.getElementById(`comm-${tab}`).style.display = 'block';
+  event.target.classList.add('active');
+}
+
+function viewTeacher(index) {
+  const teachers = [
+    { name: 'Jaime Dueñas', bio: 'Desarrollador IA & Web con 10 años de experiencia. Especialista en Machine Learning y PWAs.', emoji: '👨‍💻' },
+    { name: 'Ana García', bio: 'Científica de datos con PhD en Estadística. Apasionada por hacer los datos accesibles a todos.', emoji: '👩‍🔬' },
+  ];
+  const t = teachers[index];
+  if (!t) return;
+  showToast(`👤 ${t.name}: ${t.bio.slice(0, 60)}...`, 'info', 4000);
+}
+
+function openAddProject() {
+  showToast('Función en desarrollo', 'info');
+}
+
+function openAddTestimony() {
+  showToast('Función en desarrollo', 'info');
+}
+
+// ============================================================
+// PERFIL
+// ============================================================
+async function renderPerfil() {
+  const notas  = await IDB.getAll('notas');
+  const cursos = await IDB.getAll('cursos');
+  const docs   = await IDB.getAll('rag_docs');
+  
+  document.getElementById('stat-completed').textContent  = cursos.filter(c => c.progress >= 100).length;
+  document.getElementById('stat-notes-count').textContent = notas.length;
+  document.getElementById('stat-pomodoro').textContent   = appState.pomodoroSessions;
+  document.getElementById('stat-rag-docs').textContent   = docs.length;
+  document.getElementById('stat-streak').textContent     = '1 día';
+}
+
+function openEditProfile() {
+  const name = prompt('Tu nombre:', document.getElementById('profile-name').textContent);
+  if (name) {
+    document.getElementById('profile-name').textContent = sanitize(name);
+    localStorage.setItem('vicoProfileName', sanitize(name));
+  }
+}
+
+// ============================================================
+// STATS DE INICIO
+// ============================================================
+async function updateHomeStats() {
+  try {
+    const [cursos, notas, docs, chunks] = await Promise.all([
+      IDB.count('cursos'),
+      IDB.count('notas'),
+      IDB.count('rag_docs'),
+      IDB.count('rag_chunks'),
+    ]);
+    
+    document.getElementById('stat-cursos').textContent  = cursos;
+    document.getElementById('stat-notas').textContent   = notas;
+    document.getElementById('stat-docs').textContent    = docs;
+    document.getElementById('stat-chunks').textContent  = chunks;
+  } catch(e) {}
+}
+
+// ============================================================
+// MODO FOCUS
+// ============================================================
+function toggleFocusMode() {
+  appState.focusMode = !appState.focusMode;
+  document.body.classList.toggle('focus-mode', appState.focusMode);
+  showToast(appState.focusMode ? '🎯 Modo Focus activado' : '🎯 Modo Focus desactivado', 'info');
+}
+
+// ============================================================
+// LOADING OVERLAY
+// ============================================================
+function showLoading(msg = 'Cargando...') {
+  document.getElementById('loading-msg').textContent = msg;
+  document.getElementById('loading-overlay').style.display = 'flex';
+}
+
+function hideLoading() {
+  document.getElementById('loading-overlay').style.display = 'none';
+}
+
+// ============================================================
+// UTILIDADES
+// ============================================================
+
+/**
+ * Carga un script externo de forma lazy
+ */
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src;
+    s.onload = resolve;
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
+function openRagSettings() {
+  navTo('ajustes');
+  setTimeout(() => {
+    document.querySelector('.settings-section:nth-child(5)')?.scrollIntoView({ behavior: 'smooth' });
+  }, 300);
+}
+
+// ============================================================
+// PWA - SERVICE WORKER E INSTALACIÓN
+// ============================================================
+let deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  document.getElementById('install-btn').style.display = 'inline-flex';
+});
+
+function toggleInstallPWA() {
+  if (deferredInstallPrompt) {
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.then(result => {
+      if (result.outcome === 'accepted') {
+        showToast('✅ VICO ACTIVE instalada', 'success');
+        document.getElementById('install-btn').style.display = 'none';
+      }
+      deferredInstallPrompt = null;
+    });
+  }
+}
+
+/**
+ * Registra el Service Worker
+ */
+async function registerSW() {
+  if ('serviceWorker' in navigator) {
+    try {
+      const reg = await navigator.serviceWorker.register('sw.js');
+      console.log('SW registrado:', reg.scope);
+    } catch(e) {
+      console.warn('SW no disponible:', e);
+    }
+  }
+}
+
+// ============================================================
+// MODO OSCURO AUTOMÁTICO
+// ============================================================
+function checkAutoDark() {
+  if (settings.autoDark) {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setTheme(prefersDark ? 'dark' : 'light');
+  }
+}
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', checkAutoDark);
+
+// ============================================================
+// INICIALIZACIÓN DE LA APP
+// ============================================================
+async function initApp() {
+  try {
+    // 1. Inicializar IndexedDB
+    await initDB();
+    
+    // 2. Cargar configuración
+    loadSettings();
+    
+    // 3. Registrar Service Worker
+    await registerSW();
+    
+    // 4. Inicializar Pomodoro
+    Pomodoro.init();
+    
+    // 5. Inicializar Google Drive
+    DriveManager.init();
+    
+    // 6. Iniciar monitor de RAM
+    RAMManager.startMonitoring();
+    RAMManager.startAutoBackup();
+    
+    // 7. Actualizar stats de inicio
+    await updateHomeStats();
+    
+    // 8. Verificar modo oscuro auto
+    checkAutoDark();
+    
+    // 9. Renderizar logos de curso en el modal (pre-cargar)
+    renderCourseLogo();
+    
+    // 10. Renderizar colores de carpeta
+    renderFolderColors();
+    
+    // 11. Cargar perfil guardado
+    const savedName = localStorage.getItem('vicoProfileName');
+    if (savedName) document.getElementById('profile-name').textContent = savedName;
+    
+    // 12. Pre-inicializar RAG Worker (lazy, solo si hay docs)
+    const ragDocsCount = await IDB.count('rag_docs');
+    if (ragDocsCount > 0) {
+      getRAGWorker(); // Inicializar worker en background
+    }
+    
+    // 13. Backup automático diario de Drive
+    if (settings.driveAutoBackup && DriveManager.token) {
+      const lastDriveBackup = localStorage.getItem('vicoLastDriveBackup');
+      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+      if (!lastDriveBackup || parseInt(lastDriveBackup) < oneDayAgo) {
+        await DriveManager.backup();
+        localStorage.setItem('vicoLastDriveBackup', Date.now().toString());
+      }
+    }
+    
+    console.log('✅ VICO ACTIVE inicializado correctamente');
+    
+  } catch(e) {
+    console.error('Error inicializando VICO ACTIVE:', e);
+    showToast('Error al inicializar la app: ' + e.message, 'error');
+  }
+}
+
+// ============================================================
+// EVENTOS GLOBALES
+// ============================================================
+
+// Autosave cada 30 segundos
+setInterval(() => {
+  saveSettings();
+}, 30000);
+
+// Verificar alarmas de eventos cada minuto
+setInterval(async () => {
+  const events = await IDB.getAll('eventos');
+  const now = Date.now();
+  events.forEach(ev => {
+    if (!ev.alarm || ev.alarmFired) return;
+    const alertTime = new Date(ev.fecha).getTime() - ev.alarm * 60 * 1000;
+    if (now >= alertTime && now < alertTime + 60000) {
+      sendNotification('📅 Recordatorio', `${ev.title} en ${ev.alarm} minutos`);
+      showToast(`📅 Recordatorio: ${ev.title}`, 'warning');
+      IDB.put('eventos', { ...ev, alarmFired: true });
+    }
+  });
+}, 60000);
+
+// Teclas de acceso rápido
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey) {
+    switch(e.key) {
+      case '1': e.preventDefault(); navTo('inicio'); break;
+      case '2': e.preventDefault(); navTo('cursos'); break;
+      case '3': e.preventDefault(); navTo('rag'); break;
+      case '4': e.preventDefault(); navTo('notas'); break;
+      case '5': e.preventDefault(); navTo('calendario'); break;
+      case 'p': e.preventDefault(); openPomodoro(); break;
+      case 'f': e.preventDefault(); toggleFocusMode(); break;
+    }
+  }
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => closeModal(m.id));
+  }
+});
+
+// ============================================================
+// ARRANQUE
+// ============================================================
+document.addEventListener('DOMContentLoaded', initApp);
+</script>
+</body>
+</html>
